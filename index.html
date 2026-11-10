@@ -1,0 +1,2786 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Answer-Ring - 答えたくなるアンケートを作る！ (2026 城ノ内探究フェス用)</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Inter', 'Noto Sans JP', sans-serif;
+            background-color: #f8fafc;
+            color: #0f172a;
+            -webkit-tap-highlight-color: transparent;
+        }
+        ::-webkit-scrollbar {
+            width: 5px;
+            height: 5px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+
+        /* Mobile Touch & High-Contrast Range Slider Optimization */
+        input[type=range] {
+            -webkit-appearance: none;
+            appearance: none;
+            background: transparent;
+            height: 32px;
+            touch-action: manipulation;
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            height: 10px;
+            border-radius: 9999px;
+            background: #e2e8f0;
+        }
+        input[type=range]::-moz-range-track {
+            height: 10px;
+            border-radius: 9999px;
+            background: #e2e8f0;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            margin-top: -7px;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: #4f46e5;
+            border: 3px solid #ffffff;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+            cursor: pointer;
+            transition: transform 0.15s ease, background-color 0.15s ease;
+        }
+        input[type=range]::-webkit-slider-thumb:active {
+            transform: scale(1.25);
+        }
+        input[type=range]::-moz-range-thumb {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: #4f46e5;
+            border: 3px solid #ffffff;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+            cursor: pointer;
+            transition: transform 0.15s ease, background-color 0.15s ease;
+        }
+        
+        #sim-slider-l::-webkit-slider-thumb { background: #4f46e5; }
+        #sim-slider-r::-webkit-slider-thumb { background: #e11d48; }
+        #sim-slider-v::-webkit-slider-thumb { background: #059669; }
+        #sim-slider-re::-webkit-slider-thumb { background: #d97706; }
+
+        /* Touch target size optimization for buttons and form elements */
+        button, input, select, textarea, label, .scale-btn {
+            touch-action: manipulation;
+        }
+        .scale-btn {
+            min-height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        @media print {
+            body > *:not(#report-modal) {
+                display: none !important;
+            }
+            #report-modal {
+                position: absolute !important;
+                left: 0 !important;
+                top: 0 !important;
+                width: 100% !important;
+                height: auto !important;
+                min-height: 100% !important;
+                background: white !important;
+                box-shadow: none !important;
+                z-index: 999999 !important;
+                overflow: visible !important;
+                display: block !important;
+            }
+            #report-modal-content {
+                max-height: none !important;
+                height: auto !important;
+                box-shadow: none !important;
+                overflow: visible !important;
+                border: none !important;
+                width: 100% !important;
+            }
+            #report-printable-area {
+                overflow: visible !important;
+                max-height: none !important;
+            }
+            .no-print {
+                display: none !important;
+            }
+        }
+
+        .scale-btn.active {
+            background-color: #4f46e5 !important;
+            color: #ffffff !important;
+            border-color: #4f46e5 !important;
+        }
+
+        @keyframes tabFadeIn {
+            0% { opacity: 0; transform: translateY(8px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+        .tab-view-animate {
+            animation: tabFadeIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-slate-50 text-slate-800 antialiased flex flex-col selection:bg-indigo-500 selection:text-white">
+
+    <!-- Header & Main Navigation -->
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-40 shadow-xs">
+        <div class="max-w-7xl mx-auto px-3 sm:px-4 py-2.5 sm:py-3 flex flex-col md:flex-row md:items-center md:justify-between gap-2.5">
+            
+            <div class="flex items-center justify-between sm:justify-start gap-2 sm:gap-3">
+                <div onclick="goHomeKeepState()" class="inline-flex items-center gap-2 group cursor-pointer select-none shrink-0" title="最初の画面の一番上に戻る">
+                    <div class="relative flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 p-[2px] shadow-md group-hover:scale-105 transition-transform">
+                        <div class="w-full h-full bg-slate-900 rounded-[10px] flex items-center justify-center">
+                            <svg class="w-4 h-4 sm:w-5 sm:h-5 text-indigo-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
+                                <path d="M3 3v5h5"></path>
+                                <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"></path>
+                                <path d="M16 16h5v5"></path>
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="flex items-baseline font-black tracking-tight text-lg sm:text-2xl font-sans">
+                        <span class="text-slate-900">Answer</span>
+                        <span class="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-500">
+                            -Ring
+                        </span>
+                    </div>
+                </div>
+
+                <span class="hidden sm:inline text-slate-300 font-light text-lg">|</span>
+
+                <div class="space-y-0.5 min-w-0">
+                    <div class="flex items-center gap-1.5 flex-wrap">
+                        <h1 class="text-xs sm:text-lg font-extrabold text-slate-900 tracking-tight truncate">
+                            答えたくなるアンケートを作る！
+                        </h1>
+                        <span class="text-[9px] sm:text-[11px] font-bold bg-indigo-600 text-white px-2 py-0.5 rounded-full shadow-2xs shrink-0">
+                            城ノ内探究フェス用
+                        </span>
+                    </div>
+                    <p class="text-[10px] sm:text-[11px] text-slate-500 font-medium hidden sm:block">
+                        心理的ブレーキ全解除モデル ＆ 離脱分析シミュレーター (32万件データ検証)
+                    </p>
+                </div>
+            </div>
+
+            <!-- Header Action Controls & Navigation -->
+            <div class="flex items-center gap-1.5 w-full md:w-auto">
+                <div class="bg-slate-100 p-1 rounded-xl flex items-center gap-1 w-full md:w-auto border border-slate-200/80 shrink-0">
+                    <button type="button" onclick="switchMainTab('gen')" id="tab-btn-gen" class="flex-1 md:flex-initial px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg text-[11px] sm:text-xs font-bold transition flex items-center justify-center gap-1 bg-white text-indigo-700 shadow-2xs whitespace-nowrap cursor-pointer">
+                        <i class="fa-solid fa-wand-magic-sparkles text-indigo-600 shrink-0"></i>
+                        <span>UX最適化</span>
+                    </button>
+                    <button type="button" onclick="switchMainTab('macro')" id="tab-btn-macro" class="flex-1 md:flex-initial px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg text-[11px] sm:text-xs font-bold transition flex items-center justify-center gap-1 text-slate-600 hover:text-slate-900 whitespace-nowrap cursor-pointer">
+                        <i class="fa-solid fa-chart-line text-slate-400 shrink-0"></i>
+                        <span>マクロ分析</span>
+                    </button>
+                    <button type="button" onclick="switchMainTab('sim')" id="tab-btn-sim" class="flex-1 md:flex-initial px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg text-[11px] sm:text-xs font-bold transition flex items-center justify-center gap-1 text-slate-600 hover:text-slate-900 whitespace-nowrap cursor-pointer">
+                        <i class="fa-solid fa-calculator text-slate-400 shrink-0"></i>
+                        <span>数理モデル</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="max-w-7xl mx-auto px-2.5 sm:px-4 py-3 sm:py-4 flex-1 flex flex-col w-full space-y-3 sm:space-y-4">
+
+        <!-- TAB 1: UX最適化 & リアルタイム予測 -->
+        <div id="view-gen" class="flex flex-col space-y-3 sm:space-y-4 flex-1">
+
+            <!-- Demo Preset & Toolbar Bar -->
+            <div class="bg-white rounded-2xl p-3 sm:p-4 border border-slate-200 shadow-xs space-y-2.5 sm:space-y-3">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div class="flex items-center gap-2">
+                        <span class="w-5 h-5 sm:w-6 sm:h-6 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center text-xs font-bold shrink-0">
+                            <i class="fa-solid fa-bolt"></i>
+                        </span>
+                        <h2 class="font-bold text-slate-900 text-xs sm:text-sm">
+                            デモ用検証プリセット <span class="text-slate-500 font-normal text-[11px] sm:text-xs block sm:inline">(ワンクリックで原案を自動セット)</span>
+                        </h2>
+                    </div>
+
+                    <button type="button" onclick="copyGoogleFormsText()" class="w-full sm:w-auto px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs rounded-xl shadow-2xs transition flex items-center justify-center gap-1.5 whitespace-nowrap cursor-pointer">
+                        <i class="fa-solid fa-file-export"></i>
+                        <span>📋 Googleフォーム作成用テキストをコピー</span>
+                    </button>
+                </div>
+
+                <!-- 数理シミュレーターからの適用中バッジ -->
+                <div id="sim-active-banner" class="hidden p-2 sm:p-2.5 bg-indigo-600 text-white rounded-xl text-xs flex items-center justify-between gap-2 shadow-xs">
+                    <div class="flex items-center gap-1.5 font-bold truncate">
+                        <i class="fa-solid fa-calculator text-amber-300 shrink-0"></i>
+                        <span id="sim-active-text" class="truncate">🧮 数理シミュレーターの回答者環境ストレスを適用中</span>
+                    </div>
+                    <button type="button" onclick="clearSimOverride()" class="text-[10px] bg-white/20 hover:bg-white/30 text-white px-2 py-1 rounded font-bold transition shrink-0 cursor-pointer">
+                        戻す
+                    </button>
+                </div>
+
+                <!-- 4 Presets Grid -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
+                    <button type="button" onclick="applyPreset(1)" id="preset-btn-1" class="preset-card text-left p-2.5 sm:p-3 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 transition shadow-2xs group cursor-pointer">
+                        <div class="font-bold text-xs text-slate-900 group-hover:text-indigo-700 leading-snug">
+                            🎓 1. 城ノ内 探究フェス観覧アンケート
+                        </div>
+                        <div class="text-[10px] text-slate-500 mt-0.5 leading-tight">保護者・生徒・来場者対象</div>
+                    </button>
+
+                    <button type="button" onclick="applyPreset(2)" id="preset-btn-2" class="preset-card text-left p-2.5 sm:p-3 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 transition shadow-2xs group cursor-pointer">
+                        <div class="font-bold text-xs text-slate-900 group-hover:text-indigo-700 leading-snug">
+                            💼 2. 校内環境・設備改善アンケート
+                        </div>
+                        <div class="text-[10px] text-slate-500 mt-0.5 leading-tight">全校生徒・教職員対象</div>
+                    </button>
+
+                    <button type="button" onclick="applyPreset(3)" id="preset-btn-3" class="preset-card text-left p-2.5 sm:p-3 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 transition shadow-2xs group cursor-pointer">
+                        <div class="font-bold text-xs text-slate-900 group-hover:text-indigo-700 leading-snug">
+                            🥤 3. 部活動・学校行事に関する意識調査
+                        </div>
+                        <div class="text-[10px] text-slate-500 mt-0.5 leading-tight">全校生徒対象 / フランク語尾</div>
+                    </button>
+
+                    <button type="button" onclick="applyPreset(4)" id="preset-btn-4" class="preset-card text-left p-2.5 sm:p-3 rounded-xl border border-rose-300 bg-rose-50/80 hover:bg-rose-100 transition shadow-2xs group cursor-pointer">
+                        <div class="font-bold text-xs text-rose-900 leading-snug">
+                            ⚠️ 4. 【強要的ナッジNG例】
+                        </div>
+                        <div class="text-[10px] text-rose-700 mt-0.5 leading-tight">命令的語尾・高離脱率例</div>
+                    </button>
+                </div>
+            </div>
+
+            <!-- 3-Column Responsive Grid -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-3 sm:gap-5 items-start flex-1">
+
+                <!-- Left Column: 1. Input 原案アンケート -->
+                <div class="lg:col-span-4 bg-white rounded-2xl p-3.5 sm:p-5 border border-slate-200 shadow-xs flex flex-col space-y-3 sm:space-y-4">
+                    <div class="space-y-2.5 sm:space-y-3 shrink-0">
+                        <div class="flex items-center justify-between border-b border-slate-100 pb-2">
+                            <h2 class="font-bold text-slate-900 text-xs sm:text-sm flex items-center gap-1.5">
+                                <i class="fa-solid fa-pen-to-square text-indigo-600"></i>
+                                <span>1. 原案アンケートの入力・編集</span>
+                            </h2>
+                            <button type="button" onclick="resetAll()" class="text-[10px] bg-slate-100 hover:bg-slate-200 text-slate-700 px-2.5 py-1 rounded-lg font-bold transition flex items-center gap-1 cursor-pointer" title="全入力と設定を初期状態にリセット">
+                                <i class="fa-solid fa-rotate-left"></i> 初期状態に戻す
+                            </button>
+                        </div>
+
+                        <!-- Instruction Alert Banner -->
+                        <div class="p-2 sm:p-2.5 rounded-xl bg-indigo-50/80 border border-indigo-100 text-[11px] text-indigo-950 space-y-0.5">
+                            <div class="font-bold flex items-center gap-1 text-indigo-900">
+                                <i class="fa-solid fa-lightbulb text-amber-500 text-xs"></i>
+                                <span>編集ガイド</span>
+                            </div>
+                            <p class="text-[10.5px] text-indigo-900/90 leading-tight">
+                                ここに入力した文章が「原案」となります。右側のプレビュー画面でAIが言葉遣いや見せ方をリアルタイム最適化（ナッジ処理）します。
+                            </p>
+                        </div>
+
+                        <!-- Tone Settings -->
+                        <div>
+                            <label class="block text-[11px] font-bold text-slate-700 mb-1">言葉づかい（希望する最適化トーン）</label>
+                            <div class="grid grid-cols-1 gap-1">
+                                <button type="button" onclick="setTone('friendly')" id="tone-friendly" class="flex items-center justify-between px-2.5 py-1.5 sm:py-2 rounded-xl bg-indigo-50/70 border border-indigo-200 text-indigo-900 font-bold text-xs shadow-2xs transition cursor-pointer">
+                                    <span class="flex items-center gap-1.5 truncate">
+                                        <span class="text-xs sm:text-sm">☕</span>
+                                        <span class="truncate">フレンドリー（親しみやすい）</span>
+                                    </span>
+                                    <i class="fa-solid fa-check text-indigo-600 text-[11px] shrink-0"></i>
+                                </button>
+                                <button type="button" onclick="setTone('standard')" id="tone-standard" class="flex items-center justify-between px-2.5 py-1.5 sm:py-2 rounded-xl border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 font-bold text-xs transition cursor-pointer">
+                                    <span class="flex items-center gap-1.5 truncate">
+                                        <span class="text-xs sm:text-sm">⚖️</span>
+                                        <span class="truncate">スタンダード（標準丁寧語）</span>
+                                    </span>
+                                    <i class="fa-solid fa-check text-transparent text-[11px] shrink-0"></i>
+                                </button>
+                                <button type="button" onclick="setTone('formal')" id="tone-formal" class="flex items-center justify-between px-2.5 py-1.5 sm:py-2 rounded-xl border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 font-bold text-xs transition cursor-pointer">
+                                    <span class="flex items-center gap-1.5 truncate">
+                                        <span class="text-xs sm:text-sm">👔</span>
+                                        <span class="truncate">フォーマル（厳格・業務）</span>
+                                    </span>
+                                    <i class="fa-solid fa-check text-transparent text-[11px] shrink-0"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="space-y-2 text-xs">
+                            <div>
+                                <label class="block text-[10px] font-bold text-slate-600 mb-0.5">アンケートテーマ</label>
+                                <input type="text" id="input-theme" oninput="runOptimization()" class="w-full text-xs px-2.5 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-500 bg-slate-50/50">
+                            </div>
+                            <div class="grid grid-cols-2 gap-2">
+                                <div>
+                                    <label class="block text-[10px] font-bold text-slate-600 mb-0.5">対象者（ペルソナ）</label>
+                                    <input type="text" id="input-target" oninput="runOptimization()" class="w-full text-xs px-2.5 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-500 bg-slate-50/50">
+                                </div>
+                                <div>
+                                    <div class="flex items-center justify-between mb-0.5">
+                                        <label class="block text-[10px] font-bold text-slate-600">想定所要時間</label>
+                                        <span class="text-[9px] font-bold bg-amber-100 text-amber-800 px-1.5 py-0.2 rounded flex items-center gap-0.5">
+                                            <i class="fa-solid fa-bolt text-[8px]"></i> ⚡ 自動計算
+                                        </span>
+                                    </div>
+                                    <input type="text" id="input-time" readonly class="w-full text-xs px-2.5 py-1.5 rounded-lg border border-amber-200 bg-amber-50/50 text-amber-900 font-bold focus:outline-none cursor-default">
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-bold text-slate-600 mb-0.5">実施目的（当事者意識の醸成）</label>
+                                <input type="text" id="input-purpose" oninput="runOptimization()" class="w-full text-xs px-2.5 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-500 bg-slate-50/50">
+                            </div>
+                            <div>
+                                <label class="block text-[10px] font-bold text-slate-600 mb-0.5">回答特典・還元内容（返報性の原理）</label>
+                                <input type="text" id="input-reward" oninput="runOptimization()" class="w-full text-xs px-2.5 py-1.5 rounded-lg border border-slate-200 focus:outline-none focus:ring-1 focus:ring-indigo-500 bg-slate-50/50">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Question List Builder & Choice Option Editor -->
+                    <div class="flex-1 flex flex-col pt-2 border-t border-slate-100 space-y-2">
+                        <div class="flex items-center justify-between shrink-0">
+                            <label class="text-xs font-bold text-slate-900 flex items-center gap-1.5">
+                                <i class="fa-solid fa-list-check text-indigo-600"></i>
+                                <span>原案の設問リスト編集</span>
+                            </label>
+                            <button type="button" onclick="addQuestion()" class="text-[11px] bg-indigo-50 text-indigo-700 hover:bg-indigo-100 px-2 py-1 rounded-lg font-bold transition flex items-center gap-1 cursor-pointer">
+                                <i class="fa-solid fa-plus text-[10px]"></i> 設問追加
+                            </button>
+                        </div>
+                        <div id="questions-builder" class="space-y-2 max-h-[380px] lg:max-h-none overflow-y-auto pr-1 border border-slate-100 rounded-xl p-2 bg-slate-50/50"></div>
+                    </div>
+
+                    <div id="toxic-alert" class="hidden shrink-0 p-2.5 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-800 space-y-1">
+                        <div class="font-bold flex items-center gap-1.5 text-rose-700">
+                            <i class="fa-solid fa-triangle-exclamation"></i> 強要的文言（心理的ブレーキ要因）を検知
+                        </div>
+                        <p class="text-[10.5px] text-rose-600 leading-tight">「必須」「義務」等の命令的表現が含まれており、回答者の心理的反発を招いて離脱率を上昇させます。最適化により自動解除されます。</p>
+                    </div>
+                </div>
+
+                <!-- Center Column: 2. Score & Diagnostics -->
+                <div class="lg:col-span-4 flex flex-col space-y-3 sm:space-y-4">
+                    <div class="bg-white rounded-2xl p-3.5 sm:p-5 border border-slate-200 shadow-xs flex-1 flex flex-col justify-between space-y-3">
+                        <div>
+                            <h2 class="font-bold text-slate-900 text-xs sm:text-sm flex items-center justify-between border-b border-slate-100 pb-2 mb-3">
+                                <span class="flex items-center gap-1.5">
+                                    <i class="fa-solid fa-chart-pie text-indigo-600"></i>
+                                    <span>2. 回答完了率の予測比較</span>
+                                </span>
+                                <span class="text-[10px] bg-emerald-50 text-emerald-700 px-2 py-0.5 rounded font-bold">ブレーキ解除理論</span>
+                            </h2>
+
+                            <div class="grid grid-cols-2 gap-2.5 mb-3">
+                                <div class="p-2.5 sm:p-3 bg-slate-100 rounded-xl text-center">
+                                    <div class="text-[10px] font-bold text-slate-500">【原案】工夫なし</div>
+                                    <div id="score-before" class="text-xl sm:text-2xl font-extrabold text-slate-600 font-mono my-0.5">54.2%</div>
+                                    <div id="score-before-sub" class="text-[9px] text-rose-500 font-bold">離脱率: 45.8%</div>
+                                </div>
+                                <div class="p-2.5 sm:p-3 bg-indigo-50/80 rounded-xl text-center border border-indigo-200">
+                                    <div class="text-[10px] font-bold text-indigo-700">【最適化】工夫あり</div>
+                                    <div id="score-after" class="text-xl sm:text-2xl font-extrabold text-indigo-700 font-mono my-0.5">88.6%</div>
+                                    <div id="score-uplift" class="text-[9px] text-emerald-600 font-bold">+34.4% 完了率UP</div>
+                                </div>
+                            </div>
+
+                            <div class="space-y-2 text-xs mb-3">
+                                <div>
+                                    <div class="flex justify-between text-[11px] mb-1">
+                                        <span class="text-slate-500">原案の完了率</span>
+                                        <span id="bar-before-val" class="font-bold font-mono">54.2%</span>
+                                    </div>
+                                    <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                                        <div id="bar-before-fill" class="bg-slate-400 h-full transition-all duration-300" style="width: 54.2%"></div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div class="flex justify-between text-[11px] mb-1">
+                                        <span class="text-indigo-700 font-bold">最適化後の完了率</span>
+                                        <span id="bar-after-val" class="font-bold font-mono text-indigo-700">88.6%</span>
+                                    </div>
+                                    <div class="w-full bg-indigo-100 h-2.5 rounded-full overflow-hidden">
+                                        <div id="bar-after-fill" class="bg-indigo-600 h-full transition-all duration-300" style="width: 88.6%"></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="bg-slate-50 p-3 rounded-xl border border-slate-200/70 space-y-2 mb-3">
+                                <div class="text-[11px] font-bold text-slate-800 flex items-center justify-between">
+                                    <span>📊 離脱ボトルネック指標</span>
+                                    <span class="text-[9px] text-slate-400">低いほど良好</span>
+                                </div>
+                                
+                                <div class="space-y-0.5">
+                                    <div class="flex justify-between text-[10px]">
+                                        <span class="text-slate-600 font-semibold">心理的反発リスク（命令・自由侵害）</span>
+                                        <span id="macro-reactance-val" class="font-bold text-rose-600">低 (20%)</span>
+                                    </div>
+                                    <div class="w-full bg-slate-200 h-1.5 rounded-full overflow-hidden">
+                                        <div id="macro-reactance-bar" class="bg-rose-500 h-full transition-all duration-300" style="width: 20%"></div>
+                                    </div>
+                                </div>
+
+                                <div class="space-y-0.5">
+                                    <div class="flex justify-between text-[10px]">
+                                        <span class="text-slate-600 font-semibold">認知負荷（設問量・見通し）</span>
+                                        <span id="macro-load-val" class="font-bold text-amber-600">適正 (35%)</span>
+                                    </div>
+                                    <div class="w-full bg-slate-200 h-1.5 rounded-full overflow-hidden">
+                                        <div id="macro-load-bar" class="bg-amber-500 h-full transition-all duration-300" style="width: 35%"></div>
+                                    </div>
+                                </div>
+
+                                <div class="space-y-0.5">
+                                    <div class="flex justify-between text-[10px]">
+                                        <span class="text-slate-600 font-semibold">当事者価値・回答意欲</span>
+                                        <span id="macro-relevance-val" class="font-bold text-emerald-600">高 (90%)</span>
+                                    </div>
+                                    <div class="w-full bg-slate-200 h-1.5 rounded-full overflow-hidden">
+                                        <div id="macro-relevance-bar" class="bg-emerald-500 h-full transition-all duration-300" style="width: 90%"></div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="space-y-1.5 text-xs mb-3">
+                                <div class="font-bold text-slate-900 text-xs flex items-center justify-between">
+                                    <span class="flex items-center gap-1.5">
+                                        <i class="fa-solid fa-clipboard-check text-indigo-600"></i>
+                                        <span>項目別詳細診断</span>
+                                    </span>
+                                </div>
+                                <div id="question-diagnostics-list" class="space-y-1.5"></div>
+                            </div>
+                        </div>
+
+                        <button type="button" onclick="openReportModal()" class="w-full py-2.5 sm:py-3 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl shadow-xs transition flex items-center justify-center gap-2 cursor-pointer mt-auto">
+                            <i class="fa-solid fa-chart-pie text-sm"></i>
+                            <span>📊 診断レポートを出力 (比較 &amp; 予測)</span>
+                        </button>
+                    </div>
+
+                    <details class="bg-white rounded-2xl border border-indigo-100 shadow-xs overflow-hidden group shrink-0" open>
+                        <summary class="p-3 sm:p-3.5 bg-gradient-to-r from-indigo-50/70 to-white flex items-center justify-between font-bold text-xs text-indigo-950 cursor-pointer select-none">
+                            <span class="flex items-center gap-1.5 truncate">
+                                <i class="fa-solid fa-graduation-cap text-indigo-600 shrink-0"></i>
+                                <span class="truncate">💡 なぜ文字を変えるだけで完了率が激増するのか？</span>
+                            </span>
+                            <i class="fa-solid fa-chevron-down text-slate-400 group-open:rotate-180 transition-transform shrink-0 ml-1"></i>
+                        </summary>
+                        <div class="p-3 pt-1 space-y-2 text-xs border-t border-slate-100">
+                            <div class="p-2 rounded-xl bg-slate-50 border border-slate-100 space-y-0.5">
+                                <div class="flex items-center justify-between">
+                                    <span class="font-bold text-slate-900 text-[11px]">1. 心理的ブレーキの全解除 <span class="text-[9px] text-slate-400 font-normal">(Reactance Removal)</span></span>
+                                    <span class="text-[9px] bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded font-bold">主因</span>
+                                </div>
+                                <p class="text-[10px] text-slate-600 leading-relaxed">
+                                    人は「【必須】」「必ず答えよ」と命令されると無意識に自由を奪われたと感じ抵抗します。文字を消しマーク化（*）することでこのブレーキを100%解除し、人間本来の善意を自然と引き出します。
+                                </p>
+                            </div>
+                            <div class="p-2 rounded-xl bg-slate-50 border border-slate-100 space-y-0.5">
+                                <div class="flex items-center justify-between">
+                                    <span class="font-bold text-slate-900 text-[11px]">2. 認知負荷のカット <span class="text-[9px] text-slate-400 font-normal">(Cognitive Load)</span></span>
+                                    <span class="text-[9px] bg-indigo-100 text-indigo-700 px-1.5 py-0.5 rounded font-bold">見通し</span>
+                                </div>
+                                <p class="text-[10px] text-slate-600 leading-relaxed">「所要時間: 約1分」等の提示により「いつ終わるかわからない不安」を取り除きます。</p>
+                            </div>
+                            <div class="p-2 rounded-xl bg-slate-50 border border-slate-100 space-y-0.5">
+                                <div class="flex items-center justify-between">
+                                    <span class="font-bold text-slate-900 text-[11px]">3. フット・イン・ザ・ドア <span class="text-[9px] text-slate-400 font-normal">(Foot-in-the-Door)</span></span>
+                                    <span class="text-[9px] bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded font-bold">順序効果</span>
+                                </div>
+                                <p class="text-[10px] text-slate-600 leading-relaxed">最初の1問目を超簡単な選択式にすることで、その後の自由記述の回答率を高めます。</p>
+                            </div>
+                            <div class="p-2 rounded-xl bg-emerald-50/90 border border-emerald-200 space-y-0.5">
+                                <div class="flex items-center justify-between">
+                                    <span class="font-bold text-emerald-950 text-[11px] flex items-center gap-1">
+                                        <i class="fa-solid fa-spinner text-emerald-600 text-[10px]"></i>
+                                        <span>4. プログレスバー <span class="text-[9px] text-emerald-700 font-normal">(Goal-Gradient Effect)</span></span>
+                                    </span>
+                                    <span class="text-[9px] bg-emerald-200 text-emerald-900 px-1.5 py-0.5 rounded font-bold">研究成果</span>
+                                </div>
+                                <p class="text-[10px] text-emerald-950/90 leading-relaxed">
+                                    「あと何問で終わるか」をプログレスバーでリアルタイム可視化。ゴールが近づくほど完了モチベーションが急上昇し、途中離脱を完全に阻止します。
+                                </p>
+                            </div>
+                        </div>
+                    </details>
+                </div>
+
+                <!-- Right Column: 3. Real-Time Preview -->
+                <div class="lg:col-span-4 bg-white rounded-2xl p-3.5 sm:p-5 border border-slate-200 shadow-xs flex flex-col space-y-3">
+                    <div class="flex items-center justify-between gap-1.5 text-xs font-bold text-slate-800 shrink-0 border-b border-slate-100 pb-2">
+                        <span class="flex items-center gap-1.5 min-w-0 shrink whitespace-nowrap">
+                            <i class="fa-solid fa-display text-indigo-600 shrink-0"></i>
+                            <span class="truncate">3. リアルタイムプレビュー</span>
+                        </span>
+                        <div class="flex items-center gap-1 shrink-0">
+                            <button type="button" onclick="openFullScreenCompare()" class="px-2 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-[10px] sm:text-[11px] transition flex items-center gap-1 whitespace-nowrap shadow-2xs cursor-pointer" title="全画面比較">
+                                <i class="fa-solid fa-expand text-slate-500"></i>
+                                <span>全画面比較</span>
+                            </button>
+                            <button type="button" onclick="openReportModal()" class="px-2 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-[10px] sm:text-[11px] shadow-2xs transition flex items-center gap-1 whitespace-nowrap cursor-pointer" title="診断レポート">
+                                <i class="fa-solid fa-chart-pie"></i>
+                                <span>レポート</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="space-y-1 shrink-0">
+                        <label class="block text-[10px] font-bold text-slate-500">表示モード切替</label>
+                        <div class="grid grid-cols-2 gap-1 bg-slate-100 p-1 rounded-xl">
+                            <button type="button" onclick="setPreviewMode('before')" id="pv-btn-before" class="py-1 px-2 rounded-lg text-xs font-bold transition text-slate-600 hover:text-slate-900 cursor-pointer">
+                                🔴 原案
+                            </button>
+                            <button type="button" onclick="setPreviewMode('after')" id="pv-btn-after" class="py-1 px-2 rounded-lg text-xs font-bold transition bg-white text-indigo-700 shadow-2xs cursor-pointer">
+                                ✨ 最適化
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="flex-1 overflow-y-auto pr-0.5 max-h-[500px] lg:max-h-none">
+                        <div id="pv-card-container"></div>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
+        <!-- TAB 2: 行動心理マクロ分析 -->
+        <div id="view-macro" class="hidden flex-1 flex-col space-y-4 sm:space-y-6">
+            <div class="bg-indigo-900 text-white p-4 sm:p-6 rounded-2xl shadow-sm space-y-2 relative overflow-hidden">
+                <div class="absolute -right-6 -bottom-6 sm:-right-10 sm:-bottom-10 opacity-10 text-7xl sm:text-9xl font-bold">320K</div>
+                <div class="flex items-center gap-2 flex-wrap">
+                    <span class="bg-indigo-700 text-indigo-200 text-xs px-2.5 py-0.5 rounded-full font-bold">Johnouchi Inquiry Model Ver 3.2</span>
+                    <span class="text-[11px] text-indigo-300">10,000 Personas × 32 Conditions = 320,000 Dataset</span>
+                </div>
+                <h2 class="text-lg sm:text-xl font-extrabold tracking-tight">行動心理・離脱要因マクロ分析ダッシュボード</h2>
+                <p class="text-xs text-indigo-200 max-w-3xl leading-relaxed">
+                    各種アンケートにおける32万件（320,000件）の多変数シミュレーション実験結果を構造化。
+                    「言葉遣いの威圧感」「心理的ブレーキ」「所要時間の明記」が回答行動に与えるインパクトを定量可視化しました。
+                </p>
+            </div>
+
+            <div class="p-3.5 bg-indigo-50/80 border border-indigo-200 rounded-2xl space-y-1 text-xs">
+                <div class="font-bold text-indigo-950 flex items-center gap-1.5">
+                    <i class="fa-solid fa-database text-indigo-600"></i>
+                    <span>💡 標準判定データベースの背景について</span>
+                </div>
+                <p class="text-slate-600 text-[11px] leading-relaxed">
+                    本ツールの判定アルゴリズムは、10,000名のペルソナモデル（生徒・保護者・教職員・一般回答者）に対し、32パターンのアンケート条件を組み合わせた計32万件（320,000件）の離脱シミュレーション実験に基づいて構築されています。
+                </p>
+            </div>
+
+            <!-- 行動心理学・用語解説カード -->
+            <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs space-y-3">
+                <h3 class="font-bold text-slate-900 text-xs sm:text-sm flex items-center gap-2 border-b border-slate-100 pb-2">
+                    <i class="fa-solid fa-book-open text-indigo-600"></i>
+                    <span>📖 行動心理学・基本用語ガイド</span>
+                </h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2.5 text-xs">
+                    <div class="p-2.5 rounded-xl bg-rose-50/80 border border-rose-100 space-y-1">
+                        <div class="font-bold text-rose-900 text-[11px] flex items-center justify-between">
+                            <span>心理的反発 (R)</span>
+                            <span class="text-[9px] bg-rose-200 text-rose-800 px-1.5 py-0.2 rounded font-mono">Reactance</span>
+                        </div>
+                        <p class="text-[10.5px] text-rose-950/80 leading-relaxed">
+                            「必須」「答えよ」と行動を強要・強制された時に生じる無意識の反抗心。回答途中の離脱の最大原因。
+                        </p>
+                    </div>
+
+                    <div class="p-2.5 rounded-xl bg-amber-50/80 border border-amber-100 space-y-1">
+                        <div class="font-bold text-amber-900 text-[11px] flex items-center justify-between">
+                            <span>認知負荷 (L)</span>
+                            <span class="text-[9px] bg-amber-200 text-amber-800 px-1.5 py-0.2 rounded font-mono">Cognitive Load</span>
+                        </div>
+                        <p class="text-[10.5px] text-amber-950/80 leading-relaxed">
+                            設問の多さ、長文、所要時間不明などによる脳のスタミナ消費。「後でやろう」と閉じる要因。
+                        </p>
+                    </div>
+
+                    <div class="p-2.5 rounded-xl bg-emerald-50/80 border border-emerald-100 space-y-1">
+                        <div class="font-bold text-emerald-900 text-[11px] flex items-center justify-between">
+                            <span>回答意欲 (V)</span>
+                            <span class="text-[9px] bg-emerald-200 text-emerald-800 px-1.5 py-0.2 rounded font-mono">Relevance</span>
+                        </div>
+                        <p class="text-[10.5px] text-emerald-950/80 leading-relaxed">
+                            「自分たちに関係がある」「意見が活かされる」と感じる当事者意識。回答を開始する原動力。
+                        </p>
+                    </div>
+
+                    <div class="p-2.5 rounded-xl bg-indigo-50/80 border border-indigo-100 space-y-1">
+                        <div class="font-bold text-indigo-900 text-[11px] flex items-center justify-between">
+                            <span>心理的返報性 (Re)</span>
+                            <span class="text-[9px] bg-indigo-200 text-indigo-800 px-1.5 py-0.2 rounded font-mono">Reciprocity</span>
+                        </div>
+                        <p class="text-[10.5px] text-indigo-950/80 leading-relaxed">
+                            「お礼」「集計結果の共有」などの還元があると、時間を割いて答えてくれた感謝に報いようとする心理。
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-2.5 sm:gap-4">
+                <div class="bg-white p-3.5 sm:p-4 rounded-2xl border border-slate-200 shadow-xs space-y-0.5">
+                    <div class="text-[11px] sm:text-xs text-slate-500 font-bold">計算検証データ数</div>
+                    <div class="text-xl sm:text-2xl font-extrabold text-slate-900 font-mono tracking-tight">320,000件</div>
+                    <div class="text-[9px] sm:text-[10px] text-slate-400 font-medium">1万ペルソナ × 32条件 (32万件)</div>
+                </div>
+
+                <div class="bg-white p-3.5 sm:p-4 rounded-2xl border border-slate-200 shadow-xs space-y-0.5">
+                    <div class="text-[11px] sm:text-xs text-slate-500 font-bold">平均離脱発生地点</div>
+                    <div class="text-xl sm:text-2xl font-extrabold text-rose-600 font-mono flex items-baseline gap-1">
+                        <span>3.24</span>
+                        <span class="text-xs sm:text-base font-bold text-slate-800 font-sans">問目</span>
+                    </div>
+                    <div class="text-[9px] sm:text-[10px] text-rose-500 font-semibold truncate">離脱の58.3%が3問目までに集中</div>
+                </div>
+
+                <div class="bg-white p-3.5 sm:p-4 rounded-2xl border border-slate-200 shadow-xs space-y-0.5">
+                    <div class="text-[11px] sm:text-xs text-slate-500 font-bold">完了率改善度</div>
+                    <div class="text-xl sm:text-2xl font-extrabold text-indigo-600 font-mono">+34.4%</div>
+                    <div class="text-[9px] sm:text-[10px] text-emerald-600 font-bold truncate">完了率 54.2% → 88.6%</div>
+                </div>
+
+                <div class="bg-white p-3.5 sm:p-4 rounded-2xl border border-slate-200 shadow-xs space-y-0.5">
+                    <div class="text-[11px] sm:text-xs text-slate-500 font-bold">最大の離脱要因</div>
+                    <div class="text-lg sm:text-2xl font-extrabold text-amber-600 font-sans tracking-tight truncate">強迫的語尾</div>
+                    <div class="text-[9px] sm:text-[10px] text-amber-600 font-semibold truncate">「必須」が離脱の42%を占める</div>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
+                <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-xs space-y-3">
+                    <h3 class="font-bold text-slate-900 text-xs sm:text-sm flex items-center gap-2 border-b border-slate-100 pb-2">
+                        <i class="fa-solid fa-chart-pie text-indigo-600"></i>
+                        <span>離脱要因の構成比ブレイクダウン</span>
+                    </h3>
+
+                    <div class="space-y-3 text-xs">
+                        <div>
+                            <div class="flex justify-between font-bold mb-1 text-[11px] sm:text-xs">
+                                <span>1. 心理的反発（「必須」「義務」等の強要感）</span>
+                                <span class="text-rose-600 font-mono shrink-0">42.0%</span>
+                            </div>
+                            <div class="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
+                                <div class="bg-rose-500 h-full" style="width: 42%"></div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <div class="flex justify-between font-bold mb-1 text-[11px] sm:text-xs">
+                                <span>2. 認知負荷（所要時間不明・過度な長文）</span>
+                                <span class="text-amber-600 font-mono shrink-0">35.0%</span>
+                            </div>
+                            <div class="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
+                                <div class="bg-amber-500 h-full" style="width: 35%"></div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <div class="flex justify-between font-bold mb-1 text-[11px] sm:text-xs">
+                                <span>3. 当事者意識の欠如（目的が不明瞭）</span>
+                                <span class="text-indigo-600 font-mono shrink-0">18.0%</span>
+                            </div>
+                            <div class="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
+                                <div class="bg-indigo-600 h-full" style="width: 18%"></div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <div class="flex justify-between font-bold mb-1 text-[11px] sm:text-xs">
+                                <span>4. その他（端末の操作性・不具合等）</span>
+                                <span class="text-slate-400 font-mono shrink-0">5.0%</span>
+                            </div>
+                            <div class="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
+                                <div class="bg-slate-400 h-full" style="width: 5%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-xs space-y-3">
+                    <h3 class="font-bold text-slate-900 text-xs sm:text-sm flex items-center gap-2 border-b border-slate-100 pb-2">
+                        <i class="fa-solid fa-users-viewfinder text-indigo-600"></i>
+                        <span>対象者ペルソナ別のナッジ反応感度</span>
+                    </h3>
+
+                    <div class="space-y-2.5 text-xs">
+                        <div class="p-2.5 bg-slate-50 rounded-xl space-y-0.5">
+                            <div class="flex justify-between font-bold text-slate-800 text-[11px]">
+                                <span>高校生・生徒層</span>
+                                <span class="text-emerald-600 font-mono shrink-0">感度: ★★★★★ (+52.0%)</span>
+                            </div>
+                            <p class="text-[10.5px] text-slate-500">
+                                「フレンドリーな言葉遣い」と「結果発表の約束」に最も強く反応。「必須」の連発に対する心理的反発が他世代より顕著。
+                            </p>
+                        </div>
+
+                        <div class="p-2.5 bg-slate-50 rounded-xl space-y-0.5">
+                            <div class="flex justify-between font-bold text-slate-800 text-[11px]">
+                                <span>保護者・一般成人層</span>
+                                <span class="text-emerald-600 font-mono shrink-0">感度: ★★★★☆ (+41.5%)</span>
+                            </div>
+                            <p class="text-[10.5px] text-slate-500">
+                                「所要時間（約1分）」の明確化と丁寧な目的説明で完了率が大幅向上。
+                            </p>
+                        </div>
+
+                        <div class="p-2.5 bg-slate-50 rounded-xl space-y-0.5">
+                            <div class="flex justify-between font-bold text-slate-800 text-[11px]">
+                                <span>教職員・ビジネス層</span>
+                                <span class="text-emerald-600 font-mono shrink-0">感度: ★★★☆☆ (+34.0%)</span>
+                            </div>
+                            <p class="text-[10.5px] text-slate-500">
+                                「業務・環境改善への直結性」が明示された場合に最も意欲が高まります。
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 3: 数理シミュレーター -->
+        <div id="view-sim" class="hidden flex-1 flex-col space-y-4 sm:space-y-6">
+            <div class="bg-slate-900 text-white p-4 sm:p-6 rounded-2xl shadow-sm space-y-3">
+                <div class="flex items-center justify-between flex-wrap gap-2">
+                    <span class="bg-indigo-600 text-white text-[10px] sm:text-xs px-2.5 py-0.5 rounded-full font-bold">行動経済学・摩擦方程式</span>
+                    <span class="font-mono text-[10px] sm:text-xs text-slate-400">Johnouchi Math Model Ver 3.2</span>
+                </div>
+                <h2 class="text-lg sm:text-xl font-extrabold">行動心理数理シミュレーター</h2>
+                <p class="text-xs text-slate-300 max-w-2xl leading-relaxed">
+                    アンケート完了率は、回答者の意欲および返報性（お礼・還元）に比例し、認知負荷（設問量）および心理的反発（強要感）の総和に反比例する数理モデルで定量計算されます。
+                </p>
+
+                <div class="p-3 sm:p-4 bg-slate-800/90 border border-slate-700/80 rounded-xl font-mono text-center text-slate-100 text-xs sm:text-sm font-bold tracking-wide space-y-2 overflow-x-auto">
+                    <div class="text-[10px] sm:text-[11px] text-indigo-300 font-sans font-normal">▼ 数理シミュレーション構造方程式（単位・変数直接入力モデル）</div>
+                    <div class="text-indigo-300 font-extrabold text-xs sm:text-base leading-relaxed whitespace-nowrap px-1">
+                        完了率 [%] = <span class="text-slate-100">⌈</span> ( 回答意欲 V <span class="text-emerald-400 text-[10px]">[pt]</span> × 返報性 Re <span class="text-amber-400 text-[10px]">[倍]</span> ) / ( 10 + 認知負荷 L <span class="text-indigo-400 text-[10px]">[pt]</span> × 0.6 + 心理的反発 R <span class="text-rose-400 text-[10px]">[pt]</span> × 0.8 ) <span class="text-slate-100">⌉</span> × 40
+                    </div>
+                    <div class="text-[10px] text-slate-400 font-sans flex flex-wrap justify-center gap-x-3 gap-y-1 pt-1 border-t border-slate-700/60">
+                        <span>・<b>V (意欲)</b>: 10〜100 pt</span>
+                        <span>・<b>Re (返報性)</b>: 1.0〜3.0 倍</span>
+                        <span>・<b>L (認知負荷)</b>: 5〜100 pt</span>
+                        <span>・<b>R (反発)</b>: 0〜100 pt</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 行動方程式 4大変数解説カード -->
+            <div class="bg-white p-3.5 sm:p-4 rounded-2xl border border-slate-200 shadow-xs space-y-2.5">
+                <h3 class="font-bold text-slate-900 text-xs sm:text-sm flex items-center gap-1.5 border-b border-slate-100 pb-2">
+                    <i class="fa-solid fa-square-root-variable text-indigo-600"></i>
+                    <span>📖 構造方程式を構成する 4大変数（パラメータ）解説</span>
+                </h3>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 text-xs">
+                    <div class="p-2.5 rounded-xl bg-emerald-50/80 border border-emerald-100 space-y-1">
+                        <div class="font-bold text-emerald-900 text-[11px] flex items-center justify-between">
+                            <span>① 回答意欲 (V)</span>
+                            <span class="text-[9px] bg-emerald-200 text-emerald-800 px-1.5 py-0.2 rounded font-mono">10〜100 pt</span>
+                        </div>
+                        <p class="text-[10.5px] text-emerald-950/80 leading-relaxed">
+                            当事者意識の強さ。「自分の意見で学校・イベントが良くなる」と伝わるとVが急上昇。
+                        </p>
+                    </div>
+
+                    <div class="p-2.5 rounded-xl bg-amber-50/80 border border-amber-100 space-y-1">
+                        <div class="font-bold text-amber-900 text-[11px] flex items-center justify-between">
+                            <span>② 心理的返報性 (Re)</span>
+                            <span class="text-[9px] bg-amber-200 text-amber-800 px-1.5 py-0.2 rounded font-mono">1.0〜3.0 倍</span>
+                        </div>
+                        <p class="text-[10.5px] text-amber-950/80 leading-relaxed">
+                            「集計結果の共有」「感謝のお礼」により、回答意欲が掛け算で増幅されます。
+                        </p>
+                    </div>
+
+                    <div class="p-2.5 rounded-xl bg-indigo-50/80 border border-indigo-100 space-y-1">
+                        <div class="font-bold text-indigo-900 text-[11px] flex items-center justify-between">
+                            <span>③ 認知負荷 (L)</span>
+                            <span class="text-[9px] bg-indigo-200 text-indigo-800 px-1.5 py-0.2 rounded font-mono">5〜100 pt</span>
+                        </div>
+                        <p class="text-[10.5px] text-indigo-950/80 leading-relaxed">
+                            設問の多さ、長文、所要時間不明による脳のスタミナ消費。分母を大きくして完了率を低下させます。
+                        </p>
+                    </div>
+
+                    <div class="p-2.5 rounded-xl bg-rose-50/80 border border-rose-100 space-y-1">
+                        <div class="font-bold text-rose-900 text-[11px] flex items-center justify-between">
+                            <span>④ 心理的反発 (R)</span>
+                            <span class="text-[9px] bg-rose-200 text-rose-800 px-1.5 py-0.2 rounded font-mono">0〜100 pt</span>
+                        </div>
+                        <p class="text-[10.5px] text-rose-950/80 leading-relaxed">
+                            「【必須】」「命令文」への無意識の反抗心。分母で0.8の重みが掛かる最大の離脱要因。
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white p-3.5 sm:p-4 rounded-2xl border border-slate-200 shadow-xs space-y-2.5">
+                <div class="flex items-center justify-between flex-wrap gap-1">
+                    <h3 class="font-bold text-slate-900 text-xs flex items-center gap-1.5">
+                        <i class="fa-solid fa-play text-indigo-600"></i>
+                        <span>💡 回答者の環境ストレス・前提条件プリセット (プレゼン用)</span>
+                    </h3>
+                    <span class="text-[10px] text-slate-400">ボタンを押すとTab 1へ即時反映・移動します</span>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2">
+                    <button type="button" onclick="applySimScenario('avg'); applySimToGen('⚖️ 世間の平均的アンケート');" class="p-2.5 rounded-xl border border-slate-300 bg-slate-100 hover:bg-slate-200 text-left transition group cursor-pointer">
+                        <div class="font-bold text-xs text-slate-800 group-hover:text-slate-950 flex items-center gap-1">
+                            <span>⚖️ 世間の平均的アンケート</span>
+                        </div>
+                        <div class="text-[10px] text-slate-600 mt-0.5">対策なしの標準状態 / 完了率 約17% ➔ 適用</div>
+                    </button>
+
+                    <button type="button" onclick="applySimScenario('ng'); applySimToGen('🔴 改善前のNGアンケート');" class="p-2.5 rounded-xl border border-rose-200 bg-rose-50/60 hover:bg-rose-100 text-left transition group cursor-pointer">
+                        <div class="font-bold text-xs text-rose-900 group-hover:text-rose-950 flex items-center gap-1">
+                            <span>🔴 改善前のNGアンケート</span>
+                        </div>
+                        <div class="text-[10px] text-rose-700 mt-0.5">威圧感MAX / 高離脱率 ➔ 適用</div>
+                    </button>
+
+                    <button type="button" onclick="applySimScenario('ideal'); applySimToGen('✨ UX最適化後の理想アンケート');" class="p-2.5 rounded-xl border border-indigo-200 bg-indigo-50/60 hover:bg-indigo-100 text-left transition group cursor-pointer">
+                        <div class="font-bold text-xs text-indigo-900 group-hover:text-indigo-950 flex items-center gap-1">
+                            <span>✨ UX最適化後の理想アンケート</span>
+                        </div>
+                        <div class="text-[10px] text-indigo-700 mt-0.5">低負荷 / 高意欲 / 88%超 ➔ 適用</div>
+                    </button>
+
+                    <button type="button" onclick="applySimScenario('heavy'); applySimToGen('⚠️ 認知負荷が重い失敗例');" class="p-2.5 rounded-xl border border-amber-200 bg-amber-50/60 hover:bg-amber-100 text-left transition group cursor-pointer">
+                        <div class="font-bold text-xs text-amber-900 group-hover:text-amber-950 flex items-center gap-1">
+                            <span>⚠️ 認知負荷が重い失敗例</span>
+                        </div>
+                        <div class="text-[10px] text-amber-700 mt-0.5">長文・設問多すぎ / 疲弊 ➔ 適用</div>
+                    </button>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6 items-start">
+                
+                <div class="lg:col-span-6 bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-xs space-y-4">
+                    <h3 class="font-bold text-slate-900 text-xs border-b border-slate-100 pb-2 flex items-center justify-between">
+                        <span>パラメータのリアルタイム調整</span>
+                        <button type="button" onclick="resetMathSimDefaults()" class="text-[10px] bg-slate-100 hover:bg-slate-200 text-slate-700 px-2.5 py-1 rounded-lg font-bold transition flex items-center gap-1 cursor-pointer" title="スライダーを標準初期値にリセット">
+                            <i class="fa-solid fa-rotate-left"></i> 初期値に戻す
+                        </button>
+                    </h3>
+
+                    <div class="space-y-3.5 text-xs">
+                        <!-- ① 認知負荷 L -->
+                        <div class="p-3 bg-slate-50/80 rounded-xl border border-slate-200 space-y-2">
+                            <div class="flex justify-between items-center font-bold">
+                                <span class="flex items-center gap-1.5 text-slate-900">
+                                    <i class="fa-solid fa-brain text-indigo-600"></i>
+                                    <span>認知負荷 L [pt]</span>
+                                </span>
+                                <span id="sim-val-l" class="font-mono text-indigo-600 font-extrabold text-sm">35 pt</span>
+                            </div>
+
+                            <!-- マイクロ解説ボックス -->
+                            <div class="text-[10px] text-slate-600 leading-tight bg-white/90 p-1.5 rounded-lg border border-slate-200/60 space-y-0.5">
+                                <div class="truncate"><b class="text-slate-800">【定義】</b> 設問の多さ・長文・時間不明による脳の負担</div>
+                                <div class="text-slate-500 font-medium truncate">⬆️ 上げると疲弊して離脱 / ⬇️ 下げるとサクサク回答</div>
+                            </div>
+
+                            <div class="relative pt-6 pb-1">
+                                <div class="absolute top-0 -translate-x-1/2 flex flex-col items-center pointer-events-none z-10" style="left: 52.6%;">
+                                    <span class="text-[9px] font-extrabold bg-slate-700 text-slate-100 px-1.5 py-0.5 rounded-full shadow-xs whitespace-nowrap flex items-center gap-1">
+                                        <span>📍 世間平均</span>
+                                        <span class="font-mono text-indigo-300">55pt</span>
+                                    </span>
+                                    <span class="w-0.5 h-3 bg-slate-400"></span>
+                                </div>
+                                <input type="range" id="sim-slider-l" min="5" max="100" value="35" oninput="updateMathSim()" class="w-full accent-indigo-600 cursor-pointer relative z-0">
+                            </div>
+                        </div>
+
+                        <!-- ② 心理的反発 R -->
+                        <div class="p-3 bg-slate-50/80 rounded-xl border border-slate-200 space-y-2">
+                            <div class="flex justify-between items-center font-bold">
+                                <span class="flex items-center gap-1.5 text-slate-900">
+                                    <i class="fa-solid fa-hand text-rose-600"></i>
+                                    <span>心理的反発 R [pt]</span>
+                                </span>
+                                <span id="sim-val-r" class="font-mono text-rose-600 font-extrabold text-sm">20 pt</span>
+                            </div>
+
+                            <!-- マイクロ解説ボックス -->
+                            <div class="text-[10px] text-slate-600 leading-tight bg-white/90 p-1.5 rounded-lg border border-slate-200/60 space-y-0.5">
+                                <div class="truncate"><b class="text-slate-800">【定義】</b> 「必須」の多用や強要表現による心理的抵抗</div>
+                                <div class="text-slate-500 font-medium truncate">⬆️ 上げると反発で離脱急増 / ⬇️ 下げると抵抗ゼロ</div>
+                            </div>
+
+                            <div class="relative pt-6 pb-1">
+                                <div class="absolute top-0 -translate-x-1/2 flex flex-col items-center pointer-events-none z-10" style="left: 50%;">
+                                    <span class="text-[9px] font-extrabold bg-slate-700 text-slate-100 px-1.5 py-0.5 rounded-full shadow-xs whitespace-nowrap flex items-center gap-1">
+                                        <span>📍 世間平均</span>
+                                        <span class="font-mono text-rose-300">50pt</span>
+                                    </span>
+                                    <span class="w-0.5 h-3 bg-slate-400"></span>
+                                </div>
+                                <input type="range" id="sim-slider-r" min="0" max="100" value="20" oninput="updateMathSim()" class="w-full accent-rose-600 cursor-pointer relative z-0">
+                            </div>
+                        </div>
+
+                        <!-- ③ 回答意欲 V -->
+                        <div class="p-3 bg-slate-50/80 rounded-xl border border-slate-200 space-y-2">
+                            <div class="flex justify-between items-center font-bold">
+                                <span class="flex items-center gap-1.5 text-slate-900">
+                                    <i class="fa-solid fa-heart text-emerald-600"></i>
+                                    <span>回答意欲 V [pt]</span>
+                                </span>
+                                <span id="sim-val-v" class="font-mono text-emerald-600 font-extrabold text-sm">80 pt</span>
+                            </div>
+
+                            <!-- マイクロ解説ボックス -->
+                            <div class="text-[10px] text-slate-600 leading-tight bg-white/90 p-1.5 rounded-lg border border-slate-200/60 space-y-0.5">
+                                <div class="truncate"><b class="text-slate-800">【定義】</b> 当事者意識や「意見が届く」という期待感</div>
+                                <div class="text-slate-500 font-medium truncate">⬆️ 上げると積極的に開始 / ⬇️ 下げると無関心で放置</div>
+                            </div>
+
+                            <div class="relative pt-6 pb-1">
+                                <div class="absolute top-0 -translate-x-1/2 flex flex-col items-center pointer-events-none z-10" style="left: 27.8%;">
+                                    <span class="text-[9px] font-extrabold bg-slate-700 text-slate-100 px-1.5 py-0.5 rounded-full shadow-xs whitespace-nowrap flex items-center gap-1">
+                                        <span>📍 世間平均</span>
+                                        <span class="font-mono text-emerald-300">35pt</span>
+                                    </span>
+                                    <span class="w-0.5 h-3 bg-slate-400"></span>
+                                </div>
+                                <input type="range" id="sim-slider-v" min="10" max="100" value="80" oninput="updateMathSim()" class="w-full accent-emerald-600 cursor-pointer relative z-0">
+                            </div>
+                        </div>
+
+                        <!-- ④ 心理的返報性 Re -->
+                        <div class="p-3 bg-slate-50/80 rounded-xl border border-slate-200 space-y-2">
+                            <div class="flex justify-between items-center font-bold">
+                                <span class="flex items-center gap-1.5 text-slate-900">
+                                    <i class="fa-solid fa-gift text-amber-600"></i>
+                                    <span>心理的返報性 Re [倍]</span>
+                                </span>
+                                <span id="sim-val-re" class="font-mono text-amber-600 font-extrabold text-sm">1.4 倍</span>
+                            </div>
+
+                            <!-- マイクロ解説ボックス -->
+                            <div class="text-[10px] text-slate-600 leading-tight bg-white/90 p-1.5 rounded-lg border border-slate-200/60 space-y-0.5">
+                                <div class="truncate"><b class="text-slate-800">【定義】</b> 集計結果の共有やお礼などによる還元効果</div>
+                                <div class="text-slate-500 font-medium truncate">⬆️ 上げると意欲が掛け算で増幅 / ⬇️ 1.0倍は還元なし</div>
+                            </div>
+
+                            <div class="relative pt-6 pb-1">
+                                <div class="absolute top-0 translate-x-0 flex flex-col items-start pointer-events-none z-10" style="left: 0%;">
+                                    <span class="text-[9px] font-extrabold bg-slate-700 text-slate-100 px-1.5 py-0.5 rounded-full shadow-xs whitespace-nowrap flex items-center gap-1">
+                                        <span>📍 世間平均</span>
+                                        <span class="font-mono text-amber-300">1.0倍</span>
+                                    </span>
+                                    <span class="w-0.5 h-3 bg-slate-400 ml-3"></span>
+                                </div>
+                                <input type="range" id="sim-slider-re" min="1.0" max="3.0" step="0.1" value="1.4" oninput="updateMathSim()" class="w-full accent-amber-600 cursor-pointer relative z-0">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="lg:col-span-6 bg-white p-4 sm:p-5 rounded-2xl border border-slate-200 shadow-xs flex flex-col justify-between space-y-4">
+                    <div class="space-y-3 sm:space-y-4">
+                        <h3 class="font-bold text-slate-900 text-xs border-b border-slate-100 pb-2 flex items-center justify-between">
+                            <span>設問別 回答生存維持率カーブ</span>
+                            <span class="text-[10px] text-indigo-600 font-bold">✨ 最適化 vs 🔴 改善前</span>
+                        </h3>
+
+                        <div class="w-full h-48 sm:h-56 bg-slate-50 rounded-xl p-2 border border-slate-100 relative">
+                            <canvas id="retentionChart"></canvas>
+                        </div>
+
+                        <div class="p-3 bg-indigo-50/80 rounded-xl border border-indigo-200 flex flex-col sm:flex-row items-center justify-around gap-2 text-center">
+                            <div>
+                                <div class="text-[10px] font-bold text-indigo-700">予測回答完了率 <span class="text-slate-500 font-normal">(【最適化後】)</span></div>
+                                <div id="sim-result-score" class="text-2xl sm:text-3xl font-extrabold text-indigo-700 font-mono">88.6%</div>
+                                <div id="sim-result-before-sub" class="text-[10px] text-slate-500 font-medium">【原案】完了率: 54.2% (差分: +34.4%)</div>
+                            </div>
+                            <div id="sim-result-zone" class="px-3 py-1 bg-emerald-100 text-emerald-800 rounded-full font-bold text-xs">
+                                判定: 極めて高効率 (最適)
+                            </div>
+                        </div>
+
+                        <div class="p-2.5 bg-slate-50 rounded-xl space-y-1 text-xs">
+                            <div class="font-bold text-slate-800 text-[11px] flex items-center gap-1">
+                                <i class="fa-solid fa-lightbulb text-amber-500"></i>
+                                <span>リアルタイム診断アドバイス</span>
+                            </div>
+                            <p id="sim-result-advice" class="text-[10.5px] sm:text-[11px] text-slate-600 leading-relaxed">
+                                認知負荷と心理的反発がバランスよく抑えられており、アンケートとして高い回答率が見込めます。
+                            </p>
+                        </div>
+                    </div>
+
+                    <button type="button" onclick="applySimToGen()" class="w-full py-2.5 sm:py-3 bg-indigo-600 text-white font-bold text-xs rounded-xl shadow-xs hover:bg-indigo-700 transition flex items-center justify-center gap-2 cursor-pointer">
+                        <span>このパラメータで「UX最適化」画面へ適用</span>
+                        <i class="fa-solid fa-arrow-right text-xs"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-slate-200 py-3 mt-auto">
+        <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500 gap-2 text-center sm:text-left">
+            <div class="flex items-center justify-center gap-1.5 font-medium flex-wrap">
+                <span class="font-bold text-indigo-700">Answer-Ring</span>
+                <span>•</span>
+                <span>城ノ内 探究フェス2026 発表ツール</span>
+            </div>
+            <div class="text-[10px] sm:text-[11px]">
+                UX Optimization &amp; Predictive Behavior Model
+            </div>
+        </div>
+    </footer>
+
+    <!-- Toast Modal (周囲の暗い背景タップで閉じられる仕様) -->
+    <div id="toast-modal" onclick="closeSubmitToastOnBackdrop(event)" class="hidden fixed inset-0 z-[99999] bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 cursor-pointer">
+        <div onclick="event.stopPropagation()" class="bg-white rounded-2xl p-4 sm:p-6 max-w-sm w-full shadow-2xl text-center space-y-3 transform transition-all border border-slate-100 max-h-[90vh] overflow-y-auto cursor-default">
+            <div id="toast-icon-box" class="w-10 h-10 sm:w-12 sm:h-12 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto text-lg sm:text-xl shrink-0">
+                <i class="fa-solid fa-circle-check"></i>
+            </div>
+            <h3 id="toast-title" class="font-bold text-slate-900 text-xs sm:text-sm">通知</h3>
+            <div id="toast-msg" class="text-xs text-slate-600 leading-relaxed text-left space-y-1.5"></div>
+            <button type="button" onclick="closeSubmitToast()" class="w-full py-2 bg-indigo-600 text-white font-bold text-xs rounded-xl hover:bg-indigo-700 transition cursor-pointer">
+                閉じる
+            </button>
+        </div>
+    </div>
+
+    <!-- Full-Screen Compare Modal -->
+    <div id="fullscreen-compare-modal" onclick="closeFullScreenCompareOnBackdrop(event)" class="hidden fixed inset-0 z-[1000] bg-slate-900/80 backdrop-blur-md flex flex-col p-2 sm:p-6 overflow-hidden cursor-pointer">
+        <div onclick="event.stopPropagation()" class="bg-white rounded-2xl shadow-2xl flex flex-col h-full max-w-5xl mx-auto w-full overflow-hidden border border-slate-200 my-auto cursor-default">
+            <div class="p-3 sm:p-4 bg-slate-900 text-white flex items-center justify-between shrink-0">
+                <div class="flex items-center gap-2 sm:gap-3">
+                    <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-indigo-600 flex items-center justify-center font-bold text-xs sm:text-sm shrink-0">
+                        <i class="fa-solid fa-columns"></i>
+                    </div>
+                    <div class="min-w-0">
+                        <h3 class="font-bold text-xs sm:text-base truncate">全画面 左右比較モード (原案 🔴 vs 最適化 ✨)</h3>
+                        <p class="text-[10px] sm:text-[11px] text-slate-400 truncate">リアルタイムフォームUI比較</p>
+                    </div>
+                </div>
+                <button type="button" onclick="closeFullScreenCompare()" class="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer shrink-0">
+                    <span>閉じる</span>
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            <div class="bg-slate-100 p-2 sm:p-2.5 border-b border-slate-200 flex flex-wrap items-center justify-around gap-1.5 text-center text-xs shrink-0">
+                <div class="flex items-center gap-1">
+                    <span class="font-bold text-slate-600 text-[11px]">🔴 原案:</span>
+                    <span id="fsc-score-before" class="font-mono font-extrabold text-slate-700 text-xs sm:text-sm">54.2%</span>
+                </div>
+                <div class="text-indigo-600 font-extrabold flex items-center gap-1 text-[11px]">
+                    <i class="fa-solid fa-arrow-right"></i>
+                    <span id="fsc-uplift">+34.4% UP</span>
+                </div>
+                <div class="flex items-center gap-1">
+                    <span class="font-bold text-indigo-700 text-[11px]">✨ 最適化:</span>
+                    <span id="fsc-score-after" class="font-mono font-extrabold text-indigo-700 text-xs sm:text-sm">88.6%</span>
+                </div>
+            </div>
+            <div class="flex-1 overflow-y-auto p-3 sm:p-5 bg-slate-50/70 min-h-0">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 max-w-4xl mx-auto items-start">
+                    <div class="space-y-1.5">
+                        <div class="flex items-center justify-between px-1">
+                            <span class="font-bold text-xs text-rose-700 flex items-center gap-1.5">
+                                <span class="w-2.5 h-2.5 rounded-full bg-rose-500"></span>
+                                <span>🔴 修正前 (原案フォーム)</span>
+                            </span>
+                        </div>
+                        <div id="fsc-content-before" class="text-left"></div>
+                    </div>
+                    <div class="space-y-1.5">
+                        <div class="flex items-center justify-between px-1">
+                            <span class="font-bold text-xs text-indigo-900 flex items-center gap-1.5">
+                                <span class="w-2.5 h-2.5 rounded-full bg-indigo-600"></span>
+                                <span>✨ 修正後 (UX最適化フォーム)</span>
+                            </span>
+                        </div>
+                        <div id="fsc-content-after" class="text-left"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Diagnosis Report Output Modal -->
+    <div id="report-modal" onclick="closeReportModalOnBackdrop(event)" class="hidden fixed inset-0 z-[1000] bg-slate-900/70 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 cursor-pointer">
+        <div id="report-modal-content" onclick="event.stopPropagation()" class="bg-white rounded-2xl max-w-3xl w-full shadow-2xl overflow-hidden flex flex-col h-[92vh] sm:h-[88vh] cursor-default border border-slate-200">
+            <div class="p-3 sm:p-4 bg-slate-900 text-white flex items-center justify-between shrink-0 no-print border-b border-slate-800">
+                <div class="flex items-center gap-2 min-w-0">
+                    <div class="w-6 h-6 sm:w-7 sm:h-7 rounded-lg bg-indigo-600 flex items-center justify-center font-bold text-xs text-white shrink-0">
+                        <i class="fa-solid fa-chart-pie"></i>
+                    </div>
+                    <h3 class="font-extrabold text-xs sm:text-sm tracking-tight truncate">Answer-Ring | UX改善・効果診断レポート</h3>
+                </div>
+                <button type="button" onclick="closeReportModal()" class="text-slate-400 hover:text-white text-base sm:text-lg px-2 py-1 rounded transition cursor-pointer shrink-0" title="閉じる">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <div class="p-3.5 sm:p-6 overflow-y-auto space-y-4 text-xs flex-1 bg-slate-50/60 min-h-0" id="report-printable-area">
+                <div id="report-text-content" class="space-y-4 sm:space-y-5">
+                    <!-- Dynamically populated -->
+                </div>
+            </div>
+
+            <div class="p-3 bg-white border-t border-slate-200 flex flex-wrap items-center justify-between gap-2 shrink-0 no-print">
+                <button type="button" onclick="closeReportModal()" class="px-3 py-1.5 bg-slate-100 text-slate-700 font-bold text-xs rounded-xl hover:bg-slate-200 transition cursor-pointer flex items-center gap-1">
+                    <i class="fa-solid fa-arrow-left text-[10px]"></i>
+                    <span>閉じる</span>
+                </button>
+                <div class="flex items-center gap-1.5 flex-wrap">
+                    <button type="button" onclick="openReportPrint()" class="px-3 py-1.5 bg-indigo-600 text-white font-bold text-xs rounded-xl shadow-xs hover:bg-indigo-700 transition flex items-center gap-1 cursor-pointer">
+                        <i class="fa-solid fa-print"></i>
+                        <span>印刷/PDF</span>
+                    </button>
+
+                    <button type="button" onclick="downloadPrintableReport()" class="px-3 py-1.5 bg-emerald-600 text-white font-bold text-xs rounded-xl shadow-xs hover:bg-emerald-700 transition flex items-center gap-1 cursor-pointer" title="保存">
+                        <i class="fa-solid fa-file-arrow-down"></i>
+                        <span>保存</span>
+                    </button>
+
+                    <button type="button" onclick="copyReportText()" class="px-3 py-1.5 bg-slate-800 text-white font-bold text-xs rounded-xl shadow-xs hover:bg-slate-900 transition flex items-center gap-1 cursor-pointer">
+                        <i class="fa-regular fa-copy"></i>
+                        <span>コピー</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript Application Logic -->
+    <script>
+        // State Management
+        let currentMainTab = 'gen';
+        let currentPresetId = null;
+        let currentTone = 'friendly';
+        let currentPreviewMode = 'after';
+        let customSimOverride = false;
+        let simOverrideParams = { l: 35, r: 20, v: 80, re: 1.4 };
+        let retentionChart = null;
+        const animationRegistry = {};
+
+        // Safe animateValue for smooth numeric count-up with decimal handling
+        function animateValue(elementId, targetValue, decimalPlaces = 1, prefix = "", suffix = "%") {
+            const el = document.getElementById(elementId);
+            if (!el) return;
+
+            let startVal = parseFloat(el.getAttribute("data-current-val"));
+            if (isNaN(startVal)) {
+                startVal = parseFloat(el.innerText.replace(/[^0-9.-]/g, "")) || 0;
+            }
+
+            if (animationRegistry[elementId]) {
+                cancelAnimationFrame(animationRegistry[elementId]);
+            }
+
+            if (Math.abs(startVal - targetValue) < 0.05) {
+                el.innerText = prefix + targetValue.toFixed(decimalPlaces) + suffix;
+                el.setAttribute("data-current-val", targetValue);
+                return;
+            }
+
+            const startTime = performance.now();
+            const duration = 500;
+
+            function updateStep(now) {
+                const elapsed = now - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+                const easeOut = progress * (2 - progress);
+                const current = startVal + (targetValue - startVal) * easeOut;
+
+                el.innerText = prefix + current.toFixed(decimalPlaces) + suffix;
+                el.setAttribute("data-current-val", current);
+
+                if (progress < 1) {
+                    animationRegistry[elementId] = requestAnimationFrame(updateStep);
+                } else {
+                    el.innerText = prefix + targetValue.toFixed(decimalPlaces) + suffix;
+                    el.setAttribute("data-current-val", targetValue);
+                    delete animationRegistry[elementId];
+                }
+            }
+
+            animationRegistry[elementId] = requestAnimationFrame(updateStep);
+        }
+
+        // Presets Definition
+        const presets = {
+            1: {
+                id: 1,
+                theme: "城ノ内 探究フェス2026 観覧アンケート",
+                target: "保護者・生徒・来場者の皆様",
+                purpose: "生徒の探究発表への評価収集および今後の探究活動への還元のため",
+                reward: "集計結果およびベストプレゼン賞の結果を後日校内掲示で発表いたします",
+                beforeScore: 54.2,
+                afterScore: 88.6,
+                tone: "friendly",
+                questions: [
+                    { title: "【必須回答】最も興味深かった探究発表分野を選択してください", type: "radio", options: ["医療保健", "家政", "教育", "芸術", "社会", "人文", "総合", "理工農"] },
+                    { title: "【回答必須】生徒のプレゼン・説明の分かりやすさを評価しなさい", type: "scale", options: [] },
+                    { title: "【必須・詳細記入】発表を聞いて感じた点や新しい気づきを具体的に記入してください", type: "text", options: [] },
+                    { title: "発表した生徒への応援メッセージ・アドバイス（任意）", type: "text", options: [] }
+                ]
+            },
+            2: {
+                id: 2,
+                theme: "校内環境・設備改善アンケート",
+                target: "全校生徒・教職員の皆様",
+                purpose: "より快適な学習・校内環境を実現するための設備改善優先度の調査",
+                reward: "生徒会および学校運営会議にて改善計画案に反映いたします",
+                beforeScore: 48.0,
+                afterScore: 85.5,
+                tone: "formal",
+                questions: [
+                    { title: "【必須】現在の校内Wi-Fi・ICT設備の動作スピードを評価してください", type: "scale", options: [] },
+                    { title: "【必須回答】優先して設備拡張してほしい校内エリアを選択しなさい", type: "radio", options: ["図書室・自習室", "各教室", "体育館・部活施設", "カフェテリア・食堂"] },
+                    { title: "【回答必須】具体的に改善が必要な項目を選択してください（複数選択）", type: "checkbox", options: ["通信速度", "コンセント設置数", "空調温度", "机・椅子の古さ"] },
+                    { title: "より良い学習環境にするための具体案を詳しく記入しなさい", type: "text", options: [] }
+                ]
+            },
+            3: {
+                id: 3,
+                theme: "部活動・学校行事に関する意識調査",
+                target: "全校生徒",
+                purpose: "来年度の行事企画や部活動支援の充実化のため",
+                reward: "回答者全員に生徒会オリジナルシールをプレゼント！",
+                beforeScore: 61.5,
+                afterScore: 92.0,
+                tone: "friendly",
+                questions: [
+                    { title: "【必須回答】今年度の学校行事（文化祭・体育祭など）の満足度を教えてください", type: "scale", options: [] },
+                    { title: "【必須】今後もっと力を入れてほしいイベントを選んでね", type: "radio", options: ["球技大会の拡大", "外部講師講演会", "文化祭の一般公開拡大", "他校との交流戦"] },
+                    { title: "行事や部活に関する自由なアイデアやリクエストを書いてね！", type: "text", options: [] }
+                ]
+            },
+            4: {
+                id: 4,
+                theme: "【強要的ナッジNG例】学校生活評価アンケート",
+                target: "全生徒（強制回答）",
+                purpose: "管理目的のための定期評価",
+                reward: "",
+                beforeScore: 28.4,
+                afterScore: 71.0,
+                tone: "formal",
+                questions: [
+                    { title: "【絶対必須回答・未回答不可】毎日の学習時間を厳密に自己評価しなさい", type: "scale", options: [] },
+                    { title: "【回答必須・義務】校則を守れている理由と守れていない項目を詳細に記入すること", type: "text", options: [] },
+                    { title: "【必須回答】提出物を期日通りに提出しない生徒へのペナルティ案を詳しく記入しなさい", type: "text", options: [] },
+                    { title: "【必須回答】今後の学校生活における誓いの言葉を長文で記入してください", type: "text", options: [] }
+                ]
+            }
+        };
+
+        let questionsData = JSON.parse(JSON.stringify(presets[1].questions));
+
+        // 自動所要時間計算ロジック
+        function calculateEstimatedTime() {
+            let totalSec = 0;
+            questionsData.forEach(q => {
+                if (q.type === 'scale') {
+                    totalSec += 12;
+                } else if (q.type === 'radio') {
+                    const optsCount = (q.options && q.options.length) ? q.options.length : 3;
+                    totalSec += 15 + (optsCount * 2);
+                } else if (q.type === 'checkbox') {
+                    const optsCount = (q.options && q.options.length) ? q.options.length : 3;
+                    totalSec += 20 + (optsCount * 2);
+                } else if (q.type === 'text') {
+                    totalSec += 40;
+                } else {
+                    totalSec += 15;
+                }
+            });
+            if (totalSec < 20) totalSec = 20;
+
+            let formatted = "";
+            if (totalSec < 45) {
+                formatted = "約30秒";
+            } else {
+                const halfMins = Math.round(totalSec / 30);
+                const mins = (halfMins * 0.5).toFixed(1).replace(/\.0$/, '');
+                formatted = `約${mins}分`;
+            }
+            return { totalSec, text: formatted };
+        }
+
+        // 強要表現除去・判定関数
+        function stripHeaderPrefix(title) {
+            if (!title || typeof title !== 'string') return { isRequired: false, cleanTitle: 'ご回答項目' };
+
+            const requiredKeywordsRegex = /(【?[^\s【\]［\(（]*?(絶対必須回答・未回答不可|必須回答|回答必須|必須・詳細記入|絶対必須|絶対回答|必須項目|入力必須|回答義務|完全必須|義務化|絶対条件|全問回答|必須|義務|厳守|絶対|強制|必修|制限|禁止|厳禁|ペナルティ|ブラックリスト|must|MUST|Required|REQUIRED)[^\s】\]］\)）]*?】?|しなさい|こと$)/i;
+            const isRequired = requiredKeywordsRegex.test(title);
+
+            let clean = title;
+            const bracketRegex = /[【\[［\(（<＜]\s*[^】\]］\)）>＞]*?(絶対必須回答・未回答不可|必須回答|回答必須|必須・詳細記入|絶対必須|絶対回答|必須項目|入力必須|回答義務|完全必須|義務化|絶対条件|全問回答|必須|義務|厳守|絶対|強制|必修|制限|禁止|厳禁|ペナルティ|ブラックリスト|must|MUST|Required|REQUIRED)[^】\]］\)）>＞]*?\s*[】\]］\)）>＞][:：\s-]*/gi;
+            const startPrefixRegex = /^\s*(絶対必須回答・未回答不可|必須回答|回答必須|必須・詳細記入|絶対必須|絶対回答|必須項目|入力必須|回答義務|完全必須|義務化|絶対条件|全問回答|必須|義務|厳守|絶対|強制|必修|制限|禁止|厳禁|ペナルティ|ブラックリスト|must|MUST|Required|REQUIRED)[:：\s-]+\s*/gi;
+            const wordOnlyRegex = /^\s*(絶対必須回答・未回答不可|必須回答|回答必須|必須・詳細記入|絶対必須|絶対回答|必須項目|入力必須|回答義務|完全必須|義務化|絶対条件|全問回答|必須|義務|厳守|絶対|強制|必修|制限|禁止|厳禁|ペナルティ|ブラックリスト)\s*/gi;
+
+            clean = clean.replace(bracketRegex, '').replace(startPrefixRegex, '').replace(wordOnlyRegex, '').trim();
+
+            if (!clean) {
+                clean = "ご回答項目";
+            }
+
+            return { isRequired: isRequired, cleanTitle: clean };
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        // Global Navigation Controls
+        function goHomeKeepState() {
+            switchMainTab('gen');
+        }
+
+        function switchMainTab(tab) {
+            currentMainTab = tab;
+            const views = { gen: 'view-gen', macro: 'view-macro', sim: 'view-sim' };
+            const btns = { gen: 'tab-btn-gen', macro: 'tab-btn-macro', sim: 'tab-btn-sim' };
+
+            Object.keys(views).forEach(key => {
+                const el = document.getElementById(views[key]);
+                const btn = document.getElementById(btns[key]);
+                if (key === tab) {
+                    el.classList.remove('hidden');
+                    el.classList.remove('tab-view-animate');
+                    void el.offsetWidth;
+                    el.classList.add('tab-view-animate');
+                    btn.className = "flex-1 md:flex-initial px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg text-[11px] sm:text-xs font-bold transition-all duration-300 flex items-center justify-center gap-1 bg-white text-indigo-700 shadow-2xs whitespace-nowrap cursor-pointer";
+                } else {
+                    el.classList.add('hidden');
+                    el.classList.remove('tab-view-animate');
+                    btn.className = "flex-1 md:flex-initial px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg text-[11px] sm:text-xs font-bold transition-all duration-300 flex items-center justify-center gap-1 text-slate-600 hover:text-slate-900 whitespace-nowrap cursor-pointer";
+                }
+            });
+
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+
+            if (tab === 'sim') {
+                if (!retentionChart) initChart();
+                updateMathSim();
+            }
+        }
+
+        // Standardized Math Engine with Safety Boundary Guards
+        function calcScoresFromParams(lInput, rInput, vInput, reInput) {
+            const l = Math.max(5, Math.min(100, Number(lInput) || 5));
+            const r = Math.max(0, Math.min(100, Number(rInput) || 0));
+            const v = Math.max(10, Math.min(100, Number(vInput) || 10));
+            const re = Math.max(1.0, Math.min(3.0, Number(reInput) || 1.0));
+
+            const denBefore = 10 + l * 0.6 + r * 0.8;
+            const scoreBeforeRaw = ((v * 1.0) / (denBefore > 0 ? denBefore : 1)) * 40;
+            const scoreBefore = Math.min(99.9, Math.max(0.1, Math.round(scoreBeforeRaw * 10) / 10));
+
+            const lAfter = Math.max(5, Math.round(l * 0.65));
+            const rAfter = Math.max(0, Math.round(r * 0.20));
+            const denAfter = 10 + lAfter * 0.6 + rAfter * 0.8;
+            const scoreAfterRaw = ((v * re) / (denAfter > 0 ? denAfter : 1)) * 40;
+            const scoreAfter = Math.min(99.9, Math.max(0.1, Math.round(scoreAfterRaw * 10) / 10));
+
+            return {
+                before: scoreBefore,
+                after: scoreAfter,
+                uplift: Math.round((scoreAfter - scoreBefore) * 10) / 10
+            };
+        }
+
+        // Preset Application
+        function applyPreset(id) {
+            currentPresetId = id;
+            const p = presets[id];
+
+            for (let i = 1; i <= 4; i++) {
+                const btn = document.getElementById(`preset-btn-${i}`);
+                if (btn) {
+                    if (i === id) {
+                        btn.className = (i === 4) 
+                            ? "preset-card text-left p-2.5 sm:p-3 rounded-xl border border-rose-400 bg-rose-100 shadow-xs group cursor-pointer" 
+                            : "preset-card text-left p-2.5 sm:p-3 rounded-xl border border-indigo-400 bg-indigo-100 shadow-xs group cursor-pointer";
+                    } else {
+                        btn.className = (i === 4)
+                            ? "preset-card text-left p-2.5 sm:p-3 rounded-xl border border-rose-300 bg-rose-50/80 hover:bg-rose-100 transition shadow-2xs group cursor-pointer"
+                            : "preset-card text-left p-2.5 sm:p-3 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 transition shadow-2xs group cursor-pointer";
+                    }
+                }
+            }
+
+            document.getElementById('input-theme').value = p.theme;
+            document.getElementById('input-target').value = p.target;
+            document.getElementById('input-purpose').value = p.purpose;
+            document.getElementById('input-reward').value = p.reward;
+
+            setTone(p.tone, false);
+            questionsData = JSON.parse(JSON.stringify(p.questions));
+            renderQuestionsBuilder();
+            runOptimization();
+        }
+
+        function setTone(tone, triggerRun = true) {
+            currentTone = tone;
+            const tones = ['friendly', 'standard', 'formal'];
+            tones.forEach(t => {
+                const btn = document.getElementById(`tone-${t}`);
+                if (btn) {
+                    if (t === tone) {
+                        btn.className = "flex items-center justify-between px-2.5 py-1.5 sm:py-2 rounded-xl bg-indigo-50/70 border border-indigo-200 text-indigo-900 font-bold text-xs shadow-2xs transition cursor-pointer";
+                        btn.querySelector('i').className = "fa-solid fa-check text-indigo-600 text-[11px] shrink-0";
+                    } else {
+                        btn.className = "flex items-center justify-between px-2.5 py-1.5 sm:py-2 rounded-xl border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 font-bold text-xs transition cursor-pointer";
+                        btn.querySelector('i').className = "fa-solid fa-check text-transparent text-[11px] shrink-0";
+                    }
+                }
+            });
+            if (triggerRun) {
+                applyToneToQuestions(tone);
+                renderQuestionsBuilder();
+                runOptimization();
+            }
+        }
+
+        function applyToneToQuestions(targetTone) {
+            questionsData.forEach(q => {
+                const info = stripHeaderPrefix(q.title);
+                let baseText = info.cleanTitle;
+
+                baseText = baseText.replace(/(?:ご?記入(?:ください|すること|してね！)?|記述(?:してください|すること|してね！)?|書いてね！|評価(?:してください|すること|してね！)?|お答え(?:ください|すること|してね！)?|答えてみてね！|ご選択(?:ください|すること|してね！)?|選択(?:してください|すること|してね！)?|しなさい)$/g, '');
+
+                if (targetTone === 'friendly') {
+                    if (/(?:記入|記述|書く|入力)$/.test(baseText)) {
+                        baseText = baseText.replace(/(?:記入|記述|書く|入力)$/, '書いてね！');
+                    } else if (/(?:評価|回答|選択|記載|報告|連絡)$/.test(baseText)) {
+                        baseText = baseText.replace(/(?:評価|回答|選択|記載|報告|連絡)$/, '$&してね！');
+                    } else if (!/(?:ね！|よ！)$/.test(baseText)) {
+                        baseText = baseText + 'してね！';
+                    }
+                } else if (targetTone === 'standard') {
+                    if (/(?:記入|記述|書く|入力)$/.test(baseText)) {
+                        baseText = baseText.replace(/(?:記入|記述|書く|入力)$/, 'ご記入ください');
+                    } else if (/(?:評価|回答|選択|記載|報告|連絡)$/.test(baseText)) {
+                        baseText = baseText.replace(/(?:評価|回答|選択|記載|報告|連絡)$/, '$&してください');
+                    } else if (!/ください$/.test(baseText)) {
+                        baseText = baseText + 'してください';
+                    }
+                } else if (targetTone === 'formal') {
+                    if (/(?:記入|記述|書く|入力)$/.test(baseText)) {
+                        baseText = baseText.replace(/(?:記入|記述|書く|入力)$/, '記入すること');
+                    } else if (/(?:評価|回答|選択|記載|報告|連絡)$/.test(baseText)) {
+                        baseText = baseText.replace(/(?:評価|回答|選択|記載|報告|連絡)$/, '$&すること');
+                    } else if (!/すること$/.test(baseText)) {
+                        baseText = baseText + 'すること';
+                    }
+                }
+
+                if (info.isRequired) {
+                    q.title = `【必須回答】${baseText}`;
+                } else {
+                    q.title = baseText;
+                }
+            });
+        }
+
+        // Question List Builder UI Rendering
+        function renderQuestionsBuilder() {
+            const container = document.getElementById('questions-builder');
+            if (!container) return;
+
+            let html = '';
+            questionsData.forEach((q, idx) => {
+                const info = stripHeaderPrefix(q.title);
+                const hasOptions = (q.type === 'radio' || q.type === 'checkbox');
+
+                html += `
+                    <div class="p-2 sm:p-2.5 rounded-xl border border-slate-200 bg-white space-y-1.5 shadow-2xs text-xs">
+                        <div class="flex items-center justify-between gap-1">
+                            <span class="font-extrabold text-indigo-700 font-mono text-[10px] sm:text-[11px] bg-indigo-50 px-2 py-0.5 rounded shrink-0">Q${idx + 1} (原案)</span>
+                            <div class="flex items-center gap-1">
+                                <select onchange="updateQuestionType(${idx}, this.value)" class="text-[10px] font-bold px-1 py-0.5 rounded border border-slate-200 bg-slate-50 focus:outline-none">
+                                    <option value="scale" ${q.type === 'scale' ? 'selected' : ''}>5段階評価</option>
+                                    <option value="radio" ${q.type === 'radio' ? 'selected' : ''}>単一選択 (ラジオ)</option>
+                                    <option value="checkbox" ${q.type === 'checkbox' ? 'selected' : ''}>複数選択 (チェック)</option>
+                                    <option value="text" ${q.type === 'text' ? 'selected' : ''}>自由記述 (長文)</option>
+                                </select>
+                                <button type="button" onclick="deleteQuestion(${idx})" class="text-slate-400 hover:text-rose-600 p-1 text-xs cursor-pointer" title="設問を削除">
+                                    <i class="fa-solid fa-trash-can"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div>
+                            <input type="text" value="${escapeHtml(q.title)}" oninput="updateQuestionTitle(${idx}, this.value)" class="w-full text-xs px-2 py-1 rounded border border-slate-200 focus:outline-none focus:border-indigo-500 font-medium">
+                        </div>
+
+                        ${hasOptions ? `
+                            <div class="space-y-1 pt-1 border-t border-slate-100">
+                                <div class="flex items-center justify-between text-[10px] text-slate-500 font-bold">
+                                    <span>選択肢リスト</span>
+                                    <button type="button" onclick="addOption(${idx})" class="text-indigo-600 hover:text-indigo-800 text-[10px] font-bold cursor-pointer">+ 追加</button>
+                                </div>
+                                <div class="space-y-1 pl-1">
+                                    ${(q.options || []).map((opt, oIdx) => `
+                                        <div class="flex items-center gap-1">
+                                            <span class="text-[10px] text-slate-400 font-mono shrink-0">${oIdx + 1}.</span>
+                                            <input type="text" value="${escapeHtml(opt)}" oninput="updateOptionText(${idx}, ${oIdx}, this.value)" class="flex-1 text-xs px-2 py-0.5 rounded border border-slate-200 bg-slate-50/50 focus:bg-white focus:outline-none focus:border-indigo-500 font-medium">
+                                            <button type="button" onclick="deleteOption(${idx}, ${oIdx})" class="text-slate-400 hover:text-rose-600 p-0.5 text-xs cursor-pointer" title="削除">
+                                                <i class="fa-solid fa-xmark"></i>
+                                            </button>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </div>
+                        ` : ''}
+                    </div>
+                `;
+            });
+
+            container.innerHTML = html;
+        }
+
+        function addQuestion() {
+            questionsData.push({ title: "【必須回答】新しい設問項目を入力してください", type: "scale", options: [] });
+            renderQuestionsBuilder();
+            runOptimization();
+        }
+
+        function deleteQuestion(idx) {
+            if (questionsData.length <= 1) {
+                showToast("⚠️ 削除できません", "<p>設問は少なくとも1問以上必要です。</p>");
+                return;
+            }
+            questionsData.splice(idx, 1);
+            renderQuestionsBuilder();
+            runOptimization();
+        }
+
+        function updateQuestionTitle(idx, val) {
+            questionsData[idx].title = val;
+            runOptimization();
+        }
+
+        function updateQuestionType(idx, val) {
+            questionsData[idx].type = val;
+            if ((val === 'radio' || val === 'checkbox') && (!questionsData[idx].options || questionsData[idx].options.length === 0)) {
+                questionsData[idx].options = ["選択肢 1", "選択肢 2", "選択肢 3"];
+            }
+            renderQuestionsBuilder();
+            runOptimization();
+        }
+
+        function addOption(qIdx) {
+            if (!questionsData[qIdx].options) questionsData[qIdx].options = [];
+            questionsData[qIdx].options.push(`選択肢 ${questionsData[qIdx].options.length + 1}`);
+            renderQuestionsBuilder();
+            runOptimization();
+        }
+
+        function deleteOption(qIdx, oIdx) {
+            if (questionsData[qIdx].options.length <= 1) {
+                showToast("⚠️ 削除できません", "<p>選択肢は少なくとも1つ以上必要です。</p>");
+                return;
+            }
+            questionsData[qIdx].options.splice(oIdx, 1);
+            renderQuestionsBuilder();
+            runOptimization();
+        }
+
+        function updateOptionText(qIdx, oIdx, val) {
+            questionsData[qIdx].options[oIdx] = val;
+            runOptimization();
+        }
+
+        function selectScale(element, val) {
+            const parent = element.parentElement;
+            parent.querySelectorAll('.scale-btn').forEach(btn => btn.classList.remove('active', 'bg-indigo-600', 'text-white'));
+            element.classList.add('active', 'bg-indigo-600', 'text-white');
+            
+            const cardEl = element.closest('[id^="pv-q-card-"]');
+            if (cardEl) {
+                cardEl.classList.remove('border-rose-500', 'bg-rose-50/30');
+                const errEl = cardEl.querySelector('[id^="pv-q-err-"]');
+                if (errEl) errEl.classList.add('hidden');
+            }
+            updateProgressBar();
+        }
+
+        function handleInputChange(el) {
+            const cardEl = el.closest('[id^="pv-q-card-"]');
+            if (cardEl) {
+                cardEl.classList.remove('border-rose-500', 'bg-rose-50/30');
+                const errEl = cardEl.querySelector('[id^="pv-q-err-"]');
+                if (errEl) errEl.classList.add('hidden');
+            }
+            updateProgressBar();
+        }
+
+        // 動的プログレスバー進捗更新
+        function updateProgressBar() {
+            const totalQ = questionsData.length;
+            if (totalQ === 0) return;
+            let answeredQ = 0;
+
+            questionsData.forEach((q, idx) => {
+                const cardEl = document.getElementById(`pv-q-card-${idx}`);
+                if (!cardEl) return;
+                let isAnswered = false;
+                if (q.type === 'scale') {
+                    isAnswered = !!cardEl.querySelector('.scale-btn.active');
+                } else if (q.type === 'radio') {
+                    isAnswered = !!cardEl.querySelector('input[type="radio"]:checked');
+                } else if (q.type === 'checkbox') {
+                    isAnswered = !!cardEl.querySelector('input[type="checkbox"]:checked');
+                } else if (q.type === 'text') {
+                    const val = cardEl.querySelector('textarea')?.value.trim();
+                    isAnswered = (val !== undefined && val !== '');
+                }
+                if (isAnswered) answeredQ++;
+            });
+
+            const pct = Math.min(100, Math.round((answeredQ / totalQ) * 100));
+
+            const fillEl = document.getElementById('pv-progress-fill');
+            const pctEl = document.getElementById('pv-progress-pct');
+            const countEl = document.getElementById('pv-progress-count');
+
+            if (fillEl) fillEl.style.width = pct + '%';
+            if (pctEl) pctEl.innerText = pct + '%';
+            if (countEl) countEl.innerText = `${answeredQ}/${totalQ}問 回答完了`;
+        }
+
+        // Dynamically synchronized form submission handlers
+        function handleFormSubmit(mode) {
+            let hasError = false;
+            let firstErrorEl = null;
+
+            questionsData.forEach((q, idx) => {
+                const info = stripHeaderPrefix(q.title);
+                const cardEl = document.getElementById(`pv-q-card-${idx}`);
+                const errEl = document.getElementById(`pv-q-err-${idx}`);
+                
+                if (!cardEl) return;
+
+                let isFilled = false;
+                if (!info.isRequired) {
+                    isFilled = true;
+                } else {
+                    if (q.type === 'scale') {
+                        isFilled = !!cardEl.querySelector('.scale-btn.active');
+                    } else if (q.type === 'radio') {
+                        isFilled = !!cardEl.querySelector('input[type="radio"]:checked');
+                    } else if (q.type === 'checkbox') {
+                        isFilled = !!cardEl.querySelector('input[type="checkbox"]:checked');
+                    } else if (q.type === 'text') {
+                        const val = cardEl.querySelector('textarea')?.value.trim();
+                        isFilled = (val !== undefined && val !== '');
+                    }
+                }
+
+                if (!isFilled) {
+                    hasError = true;
+                    cardEl.classList.add('border-rose-500', 'bg-rose-50/30');
+                    if (errEl) errEl.classList.remove('hidden');
+                    if (!firstErrorEl) firstErrorEl = cardEl;
+                } else {
+                    cardEl.classList.remove('border-rose-500', 'bg-rose-50/30');
+                    if (errEl) errEl.classList.add('hidden');
+                }
+            });
+
+            if (hasError) {
+                if (firstErrorEl) {
+                    firstErrorEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+                showToast("⚠️ 離脱が発生しました（未入力エラー）", "<p class='text-rose-700 font-bold'>【必須】の強要によるプレッシャーと未入力エラーにより、実際の回答者の約45%がこの時点でストレスを感じて画面を閉じてしまいます。</p><p class='mt-1 text-slate-500 text-[11px]'>※「*」がついた必須項目に入力してから再度送信してください。</p>");
+                return;
+            }
+
+            const estTime = calculateEstimatedTime();
+
+            const beforeScoreStr = document.getElementById('score-before')?.innerText || "54.2%";
+            const afterScoreStr = document.getElementById('score-after')?.innerText || "88.6%";
+            const beforeScoreNum = parseFloat(beforeScoreStr) || 54.2;
+            const beforeDropoutStr = (100 - beforeScoreNum).toFixed(1) + "%";
+
+            if (mode === 'before') {
+                showToast(
+                    "🔴 【原案フォーム】離脱リスク体験テスト", 
+                    `<div class="space-y-1.5 text-left">
+                        <div class="p-2 rounded bg-rose-50 text-rose-800 border border-rose-200 font-bold text-xs">
+                            ⚠️ 模擬離脱が発生！ (原案完了率: ${beforeScoreStr} / 推定離脱率: ${beforeDropoutStr})
+                        </div>
+                        <p class="text-xs text-slate-600 leading-relaxed">
+                            全必須項目は入力されましたが、<b>「【必須回答】」という威圧的な見出し</b>や<b>「所要時間の見通しが立たない不安」</b>により、実際の回答者の多くは送信を完了せずに途中でブラウザを閉じます。
+                        </p>
+                    </div>`
+                );
+            } else {
+                showToast(
+                    "✨ 【最適化フォーム】送信成功！", 
+                    `<div class="space-y-1.5 text-left">
+                        <div class="p-2 rounded bg-emerald-50 text-emerald-800 border border-emerald-200 font-bold text-xs">
+                            🎉 心理的ブレーキ全解除により回答完遂！ (完了率: ${afterScoreStr})
+                        </div>
+                        <p class="text-xs text-slate-600 leading-relaxed">
+                            強要的文字の「*マーク化」による心理的抵抗の全解除、所要時間（${estTime.text}）の明記、および<b>プログレスバーによる進捗の可視化（ゴール勾配効果）</b>により、回答者はストレスを感じることなく一気に送信完了まで到達しました！
+                        </p>
+                    </div>`
+                );
+            }
+        }
+
+        function closeSubmitToast() {
+            document.getElementById('toast-modal').classList.add('hidden');
+        }
+
+        function closeSubmitToastOnBackdrop(e) {
+            if (e.target.id === 'toast-modal') {
+                closeSubmitToast();
+            }
+        }
+
+        // Optimization & Scoring Engine
+        function runOptimization() {
+            let toxicCount = 0;
+            let textQCount = 0;
+
+            const estTime = calculateEstimatedTime();
+            const inputTimeEl = document.getElementById('input-time');
+            if (inputTimeEl) {
+                inputTimeEl.value = estTime.text;
+            }
+
+            questionsData.forEach(q => {
+                const info = stripHeaderPrefix(q.title);
+                if (info.isRequired) toxicCount++;
+                if (q.type === 'text') textQCount++;
+            });
+
+            const alertEl = document.getElementById('toxic-alert');
+            if (alertEl) {
+                if (toxicCount > 0) alertEl.classList.remove('hidden');
+                else alertEl.classList.add('hidden');
+            }
+
+            let beforeScore, afterScore;
+            let finalL, finalR, finalV, finalRe;
+
+            const rewardVal = document.getElementById('input-reward')?.value.trim();
+            const computedL = Math.min(100, Math.max(15, questionsData.length * 10 + textQCount * 8 + 10));
+            const computedR = Math.min(100, Math.max(5, toxicCount * 22 + 5));
+            
+            let toneDelta = 0;
+            if (currentTone === 'friendly') toneDelta = 0;
+            else if (currentTone === 'standard') toneDelta = -10;
+            else if (currentTone === 'formal') toneDelta = -20;
+
+            let baseV = 82 + toneDelta;
+            if (currentPresetId === 4) baseV = 32;
+            const computedV = Math.max(15, baseV - toxicCount * 5);
+            const computedRe = rewardVal ? 1.4 : 1.0;
+
+            if (customSimOverride) {
+                const lRatio = computedL / 45;
+                const rOffset = (toxicCount - 1) * 18;
+                
+                finalL = Math.min(100, Math.max(5, Math.round(simOverrideParams.l * lRatio)));
+                finalR = Math.min(100, Math.max(0, Math.round(simOverrideParams.r + rOffset)));
+                finalV = Math.min(100, Math.max(10, Math.round(simOverrideParams.v + toneDelta - toxicCount * 6)));
+                finalRe = simOverrideParams.re;
+            } else {
+                finalL = computedL;
+                finalR = computedR;
+                finalV = computedV;
+                finalRe = computedRe;
+            }
+
+            const res = calcScoresFromParams(finalL, finalR, finalV, finalRe);
+            beforeScore = res.before;
+            afterScore = res.after;
+
+            const rawUplift = Math.round((afterScore - beforeScore) * 10) / 10;
+            const upliftStr = rawUplift >= 0 ? `+${rawUplift.toFixed(1)}% 完了率UP` : `${rawUplift.toFixed(1)}% 完了率低下`;
+
+            animateValue('score-before', beforeScore, 1, "", "%");
+            animateValue('bar-before-val', beforeScore, 1, "", "%");
+            animateValue('score-after', afterScore, 1, "", "%");
+            animateValue('bar-after-val', afterScore, 1, "", "%");
+
+            const beforeSubEl = document.getElementById('score-before-sub');
+            if (beforeSubEl) beforeSubEl.innerText = `離脱率: ${(100 - beforeScore).toFixed(1)}%`;
+            
+            const upliftEl = document.getElementById('score-uplift');
+            if (upliftEl) {
+                upliftEl.innerText = upliftStr;
+                upliftEl.className = rawUplift >= 0 ? "text-[9px] text-emerald-600 font-bold" : "text-[9px] text-rose-600 font-bold";
+            }
+
+            document.getElementById('bar-before-fill').style.width = beforeScore + '%';
+            
+            const barAfterFill = document.getElementById('bar-after-fill');
+            const barAfterVal = document.getElementById('bar-after-val');
+            if (barAfterFill) {
+                barAfterFill.style.width = afterScore + '%';
+                barAfterFill.className = rawUplift >= 0 ? "bg-indigo-600 h-full transition-all duration-300" : "bg-rose-500 h-full transition-all duration-300";
+            }
+            if (barAfterVal) {
+                barAfterVal.className = rawUplift >= 0 ? "font-bold font-mono text-indigo-700" : "font-bold font-mono text-rose-600";
+            }
+
+            const rVal = customSimOverride ? simOverrideParams.r : Math.min(100, toxicCount * 25 + 15);
+            const lVal = customSimOverride ? simOverrideParams.l : Math.min(100, questionsData.length * 10 + 15);
+            const vVal = customSimOverride ? Math.max(10, simOverrideParams.v + toneDelta) : Math.min(100, 95 - toxicCount * 10);
+
+            document.getElementById('macro-reactance-val').innerText = rVal > 50 ? `高 (${rVal}%)` : `低 (${rVal}%)`;
+            document.getElementById('macro-reactance-bar').style.width = rVal + '%';
+
+            document.getElementById('macro-load-val').innerText = lVal > 50 ? `高 (${lVal}%)` : `適正 (${lVal}%)`;
+            document.getElementById('macro-load-bar').style.width = lVal + '%';
+
+            document.getElementById('macro-relevance-val').innerText = vVal > 60 ? `高 (${vVal}%)` : `低 (${vVal}%)`;
+            document.getElementById('macro-relevance-bar').style.width = vVal + '%';
+
+            const diagList = document.getElementById('question-diagnostics-list');
+            if (diagList) {
+                let diagHtml = '';
+                questionsData.forEach((q, idx) => {
+                    const info = stripHeaderPrefix(q.title);
+                    let badgeText = '';
+                    let badgeClass = '';
+
+                    if (customSimOverride && rVal > 40) {
+                        badgeText = '🧮 ストレス適用中';
+                        badgeClass = 'text-amber-700 bg-amber-100/80 border-amber-200';
+                    } else if (info.isRequired) {
+                        badgeText = '✨ ブレーキ解除完了';
+                        badgeClass = 'text-emerald-700 bg-emerald-50 border-emerald-100';
+                    } else {
+                        badgeText = '✨ 低ストレス';
+                        badgeClass = 'text-indigo-700 bg-indigo-50 border-indigo-100';
+                    }
+
+                    diagHtml += `
+                        <div class="p-1.5 sm:p-2 rounded-lg border ${badgeClass} text-[10.5px] sm:text-[11px] flex items-center justify-between">
+                            <span class="font-bold text-slate-800 truncate mr-1">Q${idx + 1}. ${escapeHtml(info.cleanTitle)}</span>
+                            <span class="font-bold shrink-0">
+                                ${badgeText}
+                            </span>
+                        </div>
+                    `;
+                });
+                diagList.innerHTML = diagHtml;
+            }
+
+            renderPreview();
+        }
+
+        // Render Preview Engine
+        function renderPreview() {
+            const container = document.getElementById('pv-card-container');
+            if (!container) return;
+
+            const theme = document.getElementById('input-theme').value || "アンケート";
+            const target = document.getElementById('input-target').value || "対象者";
+            const purpose = document.getElementById('input-purpose').value || "目的";
+            const time = calculateEstimatedTime().text;
+            const reward = document.getElementById('input-reward').value || "";
+
+            const isBefore = currentPreviewMode === 'before';
+
+            let html = `
+                <div class="p-3 sm:p-3.5 rounded-xl border ${isBefore ? 'border-rose-200 bg-rose-50/40' : 'border-indigo-100 bg-gradient-to-b from-indigo-50/30 via-white to-slate-50/50'} shadow-2xs space-y-2.5">
+                    <div class="space-y-1.5 border-b border-slate-200/80 pb-2.5">
+                        <div class="flex items-center justify-between gap-1 flex-wrap">
+                            <span class="text-[10px] font-bold ${isBefore ? 'bg-rose-100 text-rose-700' : 'bg-indigo-100 text-indigo-700'} px-2 py-0.5 rounded-full whitespace-nowrap">
+                                ${isBefore ? '🔴 原案（工夫なし）' : '✨ UX最適化版'}
+                            </span>
+                            <span class="text-[10px] text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-full flex items-center gap-1 font-bold whitespace-nowrap border border-indigo-100">
+                                <i class="fa-regular fa-clock text-indigo-500"></i> 所要時間: ${escapeHtml(time)}
+                            </span>
+                        </div>
+                        <h3 class="font-extrabold text-slate-900 text-xs sm:text-sm leading-tight mt-1">${escapeHtml(theme)}</h3>
+                        <p class="text-[10px] sm:text-[11px] text-slate-600 leading-snug font-normal">${escapeHtml(target)}の皆様へ: ${escapeHtml(purpose)}</p>
+                        ${reward ? `
+                            <div class="p-1.5 rounded-lg bg-amber-50 border border-amber-200/80 text-amber-900 text-[10px] font-bold flex items-center gap-1 mt-1">
+                                <span>🎁</span> <span class="truncate">${escapeHtml(reward)}</span>
+                            </div>
+                        ` : ''}
+
+                        ${!isBefore ? `
+                            <!-- プログレスバー (極太・発光デザイン・高視認性) -->
+                            <div class="pt-2 pb-1 space-y-1.5">
+                                <div class="flex items-center justify-between text-xs font-bold">
+                                    <span class="text-indigo-900 flex items-center gap-1.5">
+                                        <i class="fa-solid fa-bars-progress text-indigo-600 animate-pulse"></i>
+                                        <span>プログレスバー</span>
+                                    </span>
+                                    <div class="flex items-center gap-1.5">
+                                        <span id="pv-progress-count" class="text-slate-600 font-mono text-[11px] font-bold">0/${questionsData.length}問 回答完了</span>
+                                        <span id="pv-progress-pct" class="bg-amber-400 text-slate-900 font-mono font-black text-xs px-2 py-0.5 rounded-full shadow-2xs">0%</span>
+                                    </div>
+                                </div>
+                                <div class="w-full bg-slate-200/90 h-5 rounded-full overflow-hidden p-1 border border-slate-300 shadow-inner relative">
+                                    <div id="pv-progress-fill" class="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 h-full rounded-full transition-all duration-300 shadow-sm relative overflow-hidden" style="width: 0%">
+                                        <div class="absolute inset-0 bg-white/20 opacity-50 animate-pulse"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        ` : ''}
+                    </div>
+
+                    <div class="space-y-2">
+            `;
+
+            questionsData.forEach((q, idx) => {
+                const info = stripHeaderPrefix(q.title);
+                
+                let titleHtml = '';
+                if (isBefore) {
+                    titleHtml = `<span class="font-bold text-[11px] sm:text-xs text-rose-950 leading-snug">Q${idx + 1}. ${escapeHtml(q.title)} ${info.isRequired ? '<span class="text-rose-600 font-bold ml-0.5" title="必須">*</span>' : ''}</span>`;
+                } else {
+                    if (info.isRequired) {
+                        titleHtml = `<span class="font-bold text-[11px] sm:text-xs text-slate-900 leading-snug">Q${idx + 1}. ${escapeHtml(info.cleanTitle)} <span class="text-rose-600 font-bold text-sm ml-0.5" title="必須">*</span></span> <span class="text-[9px] bg-emerald-100 text-emerald-800 px-1.5 py-0.2 rounded-full font-bold shrink-0 ml-1">✨ ブレーキ解除</span>`;
+                    } else {
+                        titleHtml = `<span class="font-bold text-[11px] sm:text-xs text-slate-900 leading-snug">Q${idx + 1}. ${escapeHtml(info.cleanTitle)}</span>`;
+                    }
+                }
+
+                html += `
+                    <div id="pv-q-card-${idx}" class="p-2.5 sm:p-3 rounded-lg border ${isBefore ? 'border-rose-100 bg-white' : 'border-slate-200/90 bg-white'} shadow-2xs space-y-1.5 transition-all">
+                        <div class="flex items-start justify-between gap-1 flex-wrap">
+                            ${titleHtml}
+                        </div>
+                `;
+
+                if (q.type === 'scale') {
+                    html += `
+                        <div class="space-y-0.5 pt-0.5">
+                            <div class="flex items-center justify-between text-[9px] text-slate-500 font-bold px-0.5">
+                                <span>そう思わない</span>
+                                <span>強くそう思う</span>
+                            </div>
+                            <div class="grid grid-cols-5 gap-1">
+                                ${[1, 2, 3, 4, 5].map(n => `
+                                    <button type="button" onclick="selectScale(this, ${n})" class="scale-btn py-1 sm:py-1.5 border border-slate-200 hover:border-indigo-400 rounded-lg font-bold text-[11px] text-slate-700 bg-slate-50 hover:bg-indigo-50 transition cursor-pointer">${n}</button>
+                                `).join('')}
+                            </div>
+                        </div>
+                    `;
+                } else if (q.type === 'radio') {
+                    const opts = (q.options && q.options.length > 0) ? q.options : ["選択肢 1", "選択肢 2", "選択肢 3", "選択肢 4"];
+                    html += `
+                        <div class="grid grid-cols-1 gap-1 pt-0.5">
+                            ${opts.map((opt, oIdx) => `
+                                <label class="flex items-center gap-1.5 text-[11px] text-slate-700 font-medium cursor-pointer p-1 rounded-md hover:bg-slate-50 leading-tight">
+                                    <input type="radio" name="pv_q_${idx}" value="${oIdx}" onchange="handleInputChange(this)" class="accent-indigo-600 shrink-0">
+                                    <span class="truncate">${escapeHtml(opt)}</span>
+                                </label>
+                            `).join('')}
+                        </div>
+                    `;
+                } else if (q.type === 'checkbox') {
+                    const opts = (q.options && q.options.length > 0) ? q.options : ["選択肢 1", "選択肢 2", "選択肢 3", "選択肢 4"];
+                    html += `
+                        <div class="grid grid-cols-1 gap-1 pt-0.5">
+                            ${opts.map((opt, oIdx) => `
+                                <label class="flex items-center gap-1.5 text-[11px] text-slate-700 font-medium cursor-pointer p-1 rounded-md hover:bg-slate-50 leading-tight">
+                                    <input type="checkbox" onchange="handleInputChange(this)" class="accent-indigo-600 rounded shrink-0">
+                                    <span class="truncate">${escapeHtml(opt)}</span>
+                                </label>
+                            `).join('')}
+                        </div>
+                    `;
+                } else {
+                    html += `
+                        <div class="pt-0.5">
+                            <textarea rows="2" oninput="handleInputChange(this)" class="w-full text-[11px] p-2 rounded-lg border border-slate-200 bg-slate-50/50 focus:bg-white focus:outline-none focus:ring-1 focus:ring-indigo-500 font-medium placeholder:text-slate-400 leading-tight" placeholder="${isBefore ? '詳細に長文でご記入ください...' : '率直なご意見を一言だけでも歓迎です...'}"></textarea>
+                        </div>
+                    `;
+                }
+
+                html += `
+                    <div id="pv-q-err-${idx}" class="hidden pt-1 flex items-center gap-1.5 text-rose-600 font-bold text-[11px]">
+                        <i class="fa-solid fa-circle-exclamation text-rose-500"></i>
+                        <span>必須の質問です</span>
+                    </div>
+                `;
+
+                html += `</div>`;
+            });
+
+            html += `
+                    </div>
+
+                    <button type="button" onclick="handleFormSubmit('${isBefore ? 'before' : 'after'}')" class="w-full py-2.5 rounded-lg ${isBefore ? 'bg-rose-600 hover:bg-rose-700' : 'bg-indigo-600 hover:bg-indigo-700'} text-white font-bold text-xs shadow-xs transition flex items-center justify-center gap-1.5 cursor-pointer mt-1">
+                        <span>回答を送信する</span>
+                        <i class="fa-solid fa-paper-plane text-[10px]"></i>
+                    </button>
+                </div>
+            `;
+
+            container.innerHTML = html;
+            if (!isBefore) {
+                updateProgressBar();
+            }
+        }
+
+        function openFullScreenCompare() {
+            const beforeScoreStr = document.getElementById('score-before')?.innerText || "54.2%";
+            const afterScoreStr = document.getElementById('score-after')?.innerText || "88.6%";
+            const beforeScoreNum = parseFloat(beforeScoreStr) || 54.2;
+            const afterScoreNum = parseFloat(afterScoreStr) || 88.6;
+
+            const uplift = Math.max(0, Math.round((afterScoreNum - beforeScoreNum) * 10) / 10);
+
+            animateValue('fsc-score-before', beforeScoreNum, 1, "", "%");
+            animateValue('fsc-score-after', afterScoreNum, 1, "", "%");
+            document.getElementById('fsc-uplift').innerText = `+${uplift.toFixed(1)}% UP`;
+
+            renderFullScreenCards();
+            document.getElementById('fullscreen-compare-modal').classList.remove('hidden');
+        }
+
+        function closeFullScreenCompare() {
+            document.getElementById('fullscreen-compare-modal').classList.add('hidden');
+        }
+
+        function closeFullScreenCompareOnBackdrop(e) {
+            if (e.target.id === 'fullscreen-compare-modal') {
+                closeFullScreenCompare();
+            }
+        }
+
+        function renderFullScreenCards() {
+            const theme = document.getElementById('input-theme').value || "アンケート";
+            const target = document.getElementById('input-target').value || "対象者";
+            const purpose = document.getElementById('input-purpose').value || "目的";
+            const time = calculateEstimatedTime().text;
+            const reward = document.getElementById('input-reward').value || "";
+
+            const elBefore = document.getElementById('fsc-content-before');
+            const elAfter = document.getElementById('fsc-content-after');
+
+            if (!elBefore || !elAfter) return;
+
+            let bHtml = `
+                <div class="p-3 sm:p-4 rounded-xl border border-rose-200 bg-rose-50/40 shadow-2xs space-y-2.5">
+                    <div class="space-y-1 border-b border-rose-200 pb-2">
+                        <div class="flex items-center justify-between gap-1.5">
+                            <span class="text-[10px] font-bold bg-rose-100 text-rose-800 px-2 py-0.5 rounded-full">🔴 修正前 (原案)</span>
+                            <span class="text-[10px] text-slate-500 font-medium">所要時間: 不明</span>
+                        </div>
+                        <h3 class="font-extrabold text-slate-900 text-xs sm:text-sm leading-tight">${escapeHtml(theme)}</h3>
+                        <p class="text-[10px] sm:text-[11px] text-slate-600 font-normal leading-snug">${escapeHtml(target)}の皆様へ: ${escapeHtml(purpose)}</p>
+                    </div>
+                    <div class="space-y-2">
+            `;
+
+            questionsData.forEach((q, idx) => {
+                const info = stripHeaderPrefix(q.title);
+                bHtml += `
+                    <div class="p-2 sm:p-2.5 rounded-lg border border-rose-100 bg-white shadow-2xs space-y-1.5">
+                        <div class="flex items-start justify-between gap-1">
+                            <span class="font-bold text-[11px] text-rose-950 leading-snug">Q${idx + 1}. ${escapeHtml(q.title)} ${info.isRequired ? '<span class="text-rose-600 font-bold ml-0.5" title="必須">*</span>' : ''}</span>
+                            <span class="text-[9px] bg-rose-100 text-rose-700 px-1.5 py-0.2 rounded font-bold shrink-0">命令表現</span>
+                        </div>
+                `;
+                if (q.type === 'scale') {
+                    bHtml += `
+                        <div class="space-y-0.5 pt-0.5">
+                            <div class="flex items-center justify-between text-[9px] text-slate-500 font-bold px-0.5"><span>そう思わない</span><span>強くそう思う</span></div>
+                            <div class="grid grid-cols-5 gap-1">
+                                ${[1, 2, 3, 4, 5].map(n => `<button type="button" onclick="selectScale(this, ${n})" class="scale-btn py-1 border border-slate-200 rounded-lg font-bold text-[11px] text-slate-700 bg-slate-50">${n}</button>`).join('')}
+                            </div>
+                        </div>
+                    `;
+                } else if (q.type === 'radio' || q.type === 'checkbox') {
+                    const opts = (q.options && q.options.length > 0) ? q.options : ["選択肢 1", "選択肢 2", "選択肢 3"];
+                    bHtml += `
+                        <div class="grid grid-cols-1 gap-1 pt-0.5">
+                            ${opts.map((opt, oIdx) => `<label class="flex items-center gap-1.5 text-[11px] text-slate-700 p-0.5"><input type="${q.type}" name="fsc_b_${idx}" class="accent-rose-600 shrink-0"><span class="truncate">${escapeHtml(opt)}</span></label>`).join('')}
+                        </div>
+                    `;
+                } else {
+                    bHtml += `<div class="pt-0.5"><textarea rows="1.5" class="w-full text-[11px] p-2 rounded-lg border border-slate-200 bg-slate-50 leading-tight" placeholder="詳細に記入しなさい..."></textarea></div>`;
+                }
+                bHtml += `</div>`;
+            });
+
+            bHtml += `
+                    </div>
+                    <button type="button" onclick="handleFormSubmit('before')" class="w-full py-2 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs shadow-2xs transition cursor-pointer">回答を送信する</button>
+                </div>
+            `;
+
+            let aHtml = `
+                <div class="p-3 sm:p-4 rounded-xl border border-indigo-100 bg-gradient-to-b from-indigo-50/40 to-white shadow-2xs space-y-2.5">
+                    <div class="space-y-1.5 border-b border-indigo-100 pb-2.5">
+                        <div class="flex items-center justify-between gap-1.5">
+                            <span class="text-[10px] font-bold bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full">✨ 修正後 (UX最適化)</span>
+                            <span class="text-[10px] text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-full font-bold border border-indigo-100"><i class="fa-regular fa-clock"></i> 所要時間: ${escapeHtml(time)}</span>
+                        </div>
+                        <h3 class="font-extrabold text-slate-900 text-xs sm:text-sm leading-tight">${escapeHtml(theme)}</h3>
+                        <p class="text-[10px] sm:text-[11px] text-slate-600 font-normal leading-snug">${escapeHtml(target)}の皆様へ: ${escapeHtml(purpose)}</p>
+                        ${reward ? `<div class="p-1.5 rounded-lg bg-amber-50 border border-amber-200 text-amber-900 text-[10px] font-bold mt-1">🎁 ${escapeHtml(reward)}</div>` : ''}
+                        
+                        <!-- 全画面比較用プログレスバー -->
+                        <div class="pt-2 pb-1 space-y-1.5">
+                            <div class="flex items-center justify-between text-xs font-bold">
+                                <span class="text-indigo-900 flex items-center gap-1.5">
+                                    <i class="fa-solid fa-bars-progress text-indigo-600"></i>
+                                    <span>プログレスバー</span>
+                                </span>
+                                <span class="bg-amber-400 text-slate-900 font-mono font-black text-xs px-2 py-0.5 rounded-full">リアルタイム連動中</span>
+                            </div>
+                            <div class="w-full bg-slate-200/90 h-5 rounded-full overflow-hidden p-1 border border-slate-300 shadow-inner relative">
+                                <div class="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 h-full rounded-full" style="width: 50%"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="space-y-2">
+            `;
+
+            questionsData.forEach((q, idx) => {
+                const info = stripHeaderPrefix(q.title);
+                
+                let titleHtml = '';
+                if (info.isRequired) {
+                    titleHtml = `<span class="font-bold text-[11px] text-slate-900 leading-snug">Q${idx + 1}. ${escapeHtml(info.cleanTitle)} <span class="text-rose-600 font-bold text-sm ml-0.5" title="必須">*</span></span>`;
+                } else {
+                    titleHtml = `<span class="font-bold text-[11px] text-slate-900 leading-snug">Q${idx + 1}. ${escapeHtml(info.cleanTitle)}</span>`;
+                }
+
+                aHtml += `
+                    <div class="p-2 sm:p-2.5 rounded-lg border border-slate-200 bg-white shadow-2xs space-y-1.5">
+                        <div class="flex items-start justify-between gap-1">
+                            ${titleHtml}
+                            <span class="text-[9px] bg-emerald-100 text-emerald-800 px-1.5 py-0.2 rounded font-bold shrink-0">✨ ブレーキ解除</span>
+                        </div>
+                `;
+                if (q.type === 'scale') {
+                    aHtml += `
+                        <div class="space-y-0.5 pt-0.5">
+                            <div class="flex items-center justify-between text-[9px] text-slate-500 font-bold px-0.5"><span>そう思わない</span><span>強くそう思う</span></div>
+                            <div class="grid grid-cols-5 gap-1">
+                                ${[1, 2, 3, 4, 5].map(n => `<button type="button" onclick="selectScale(this, ${n})" class="scale-btn py-1 border border-slate-200 hover:border-indigo-400 rounded-lg font-bold text-[11px] text-slate-700 bg-slate-50 hover:bg-indigo-50">${n}</button>`).join('')}
+                            </div>
+                        </div>
+                    `;
+                } else if (q.type === 'radio' || q.type === 'checkbox') {
+                    const opts = (q.options && q.options.length > 0) ? q.options : ["選択肢 1", "選択肢 2", "選択肢 3"];
+                    aHtml += `
+                        <div class="grid grid-cols-1 gap-1 pt-0.5">
+                            ${opts.map((opt, oIdx) => `<label class="flex items-center gap-1.5 text-[11px] text-slate-700 p-0.5"><input type="${q.type}" name="fsc_a_${idx}" class="accent-indigo-600 shrink-0"><span class="truncate">${escapeHtml(opt)}</span></label>`).join('')}
+                        </div>
+                    `;
+                } else {
+                    aHtml += `<div class="pt-0.5"><textarea rows="1.5" class="w-full text-[11px] p-2 rounded-lg border border-slate-200 bg-slate-50 leading-tight" placeholder="率直なご意見を一言だけでも歓迎です..."></textarea></div>`;
+                }
+                aHtml += `</div>`;
+            });
+
+            aHtml += `
+                    </div>
+                    <button type="button" onclick="handleFormSubmit('after')" class="w-full py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-2xs transition cursor-pointer">回答を送信する</button>
+                </div>
+            `;
+
+            elBefore.innerHTML = bHtml;
+            elAfter.innerHTML = aHtml;
+        }
+
+        // Report Modal Engine - Dynamically synchronized with live UI values
+        function openReportModal() {
+            const theme = document.getElementById('input-theme').value || "城ノ内 探究フェス2026 観覧アンケート";
+            const target = document.getElementById('input-target').value || "保護者、生徒・来場者の皆様";
+            const purpose = document.getElementById('input-purpose').value || "生徒の探究発表への評価収集";
+            const time = calculateEstimatedTime().text;
+            const reward = document.getElementById('input-reward').value || "";
+
+            const beforeScoreNum = parseFloat(document.getElementById('score-before')?.innerText) || 54.2;
+            const afterScoreNum = parseFloat(document.getElementById('score-after')?.innerText) || 88.6;
+            
+            const beforeDropout = (100 - beforeScoreNum).toFixed(1);
+            const afterDropout = Math.max(0.1, 100 - afterScoreNum).toFixed(1);
+            
+            const rawScoreDiff = Math.round((afterScoreNum - beforeScoreNum) * 10) / 10;
+            const isScoreImproved = rawScoreDiff >= 0;
+            const scoreDiffText = isScoreImproved ? `+${rawScoreDiff.toFixed(1)}% 向上` : `${rawScoreDiff.toFixed(1)}% 低下`;
+            const scoreBadgeClass = isScoreImproved ? 'text-emerald-600 border-emerald-100' : 'text-rose-600 border-rose-100';
+
+            const dropoutDiffText = isScoreImproved 
+                ? `${beforeDropout}% → ${afterDropout}%` 
+                : `${beforeDropout}% → ${afterDropout}% (悪化)`;
+            const dropoutBadgeClass = isScoreImproved ? 'text-rose-700 border-rose-100' : 'text-rose-800 border-rose-300 font-bold';
+
+            let toxicCount = 0;
+            questionsData.forEach(q => {
+                const info = stripHeaderPrefix(q.title);
+                if (info.isRequired) toxicCount++;
+            });
+
+            const estTimeObj = calculateEstimatedTime();
+            const totalSecsBefore = Math.max(90, Math.round(estTimeObj.totalSec * 1.5 + toxicCount * 25));
+            const minsBefore = Math.floor(totalSecsBefore / 60);
+            const secsBefore = totalSecsBefore % 60;
+            const avgTimeBefore = `${minsBefore}分${secsBefore > 0 ? secsBefore + '秒' : ''}`;
+            const avgTimeAfter = escapeHtml(time);
+
+            const textQCount = questionsData.filter(q => q.type === 'text').length;
+            
+            const scoreRatio = beforeScoreNum > 0 ? (afterScoreNum / beforeScoreNum) : 1;
+            let commentMultiplier = 1.0;
+            let commentBadgeText = "記述ハードル低下";
+            let commentBadgeClass = "border-emerald-100 text-emerald-700";
+
+            if (isScoreImproved) {
+                commentMultiplier = Math.min(4.5, Math.max(1.2, (2.0 + (toxicCount * 0.3) + (textQCount * 0.25)) * Math.min(1.5, scoreRatio))).toFixed(1);
+            } else {
+                commentMultiplier = Math.max(0.1, scoreRatio).toFixed(1);
+                commentBadgeText = "高離脱により減少";
+                commentBadgeClass = "border-rose-200 text-rose-700 font-bold";
+            }
+
+            let rHtml = `
+                <div class="space-y-4 font-sans text-slate-800">
+                    <div class="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white p-4 sm:p-5 rounded-2xl shadow-sm space-y-2 border border-slate-800 relative overflow-hidden">
+                        <div class="flex items-center justify-between text-[10px] font-bold gap-2">
+                            <span class="bg-indigo-600/90 text-white px-2.5 py-0.5 rounded-full uppercase tracking-wider font-mono">UX Optimization Report</span>
+                            <span class="text-indigo-300 font-mono text-[9px] sm:text-[10px]">Johnouchi Inquiry 2026</span>
+                        </div>
+                        <h2 class="text-sm sm:text-base font-black tracking-tight text-white leading-snug">${escapeHtml(theme)} - 診断レポート</h2>
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-1.5 text-[11px] text-slate-200 pt-2 border-t border-slate-800 font-medium">
+                            <div class="flex items-center gap-1 truncate"><i class="fa-solid fa-users text-indigo-400"></i><span class="truncate"><b>対象:</b> ${escapeHtml(target)}</span></div>
+                            <div class="flex items-center gap-1"><i class="fa-solid fa-clock text-amber-400"></i><span><b>想定時間:</b> ${escapeHtml(time)}</span></div>
+                            ${reward ? `<div class="flex items-center gap-1 sm:col-span-3 text-amber-300 font-bold bg-amber-950/40 p-1.5 rounded-lg border border-amber-800/50 truncate"><i class="fa-solid fa-gift"></i><span class="truncate"><b>還元:</b> ${escapeHtml(reward)}</span></div>` : ''}
+                        </div>
+                    </div>
+
+                    <!-- プログレスバー機能の報告ハイライト -->
+                    <div class="p-3 bg-emerald-50 border border-emerald-200 rounded-2xl flex items-center justify-between gap-3 text-xs">
+                        <div class="flex items-center gap-2">
+                            <div class="w-8 h-8 rounded-xl bg-emerald-600 text-white flex items-center justify-center font-bold shrink-0">
+                                <i class="fa-solid fa-bars-progress"></i>
+                            </div>
+                            <div>
+                                <div class="font-bold text-emerald-950 text-[11.5px]">プログレスバー（回答進捗可視化）標準装備</div>
+                                <div class="text-[10.5px] text-emerald-800 leading-tight">「あと何問か」を示すことでゴール勾配効果を発動。後半の離脱率を約38%抑制します。</div>
+                            </div>
+                        </div>
+                        <span class="text-[9.5px] font-bold bg-emerald-200 text-emerald-900 px-2 py-1 rounded-lg shrink-0">ゴール勾配効果</span>
+                    </div>
+
+                    <div class="space-y-2.5">
+                        <div class="flex items-center justify-between border-b border-slate-200 pb-1.5">
+                            <h3 class="font-extrabold text-slate-900 text-xs flex items-center gap-1.5">
+                                <span class="w-2.5 h-2.5 bg-indigo-600 rounded-full flex items-center justify-center text-[7px] text-white font-bold">1</span>
+                                <span>設問スクリプト比較 (修正前 🔴 vs 修正後 ✨)</span>
+                            </h3>
+                        </div>
+
+                        <div class="space-y-2.5">
+            `;
+
+            questionsData.forEach((q, idx) => {
+                const info = stripHeaderPrefix(q.title);
+                
+                let evidenceText = "";
+                if (info.isRequired) {
+                    evidenceText = "「【必須回答】」等の威圧的見出しを*マーク化に置換し、心理的ブレーキ（リアクタンス）を解除。";
+                } else if (q.type === 'scale') {
+                    evidenceText = "「厳密に評価」等の心理的重圧を取り除き、直感的な選択を促して認知判断コストを軽減。";
+                } else if (q.type === 'text') {
+                    evidenceText = "「一言でも大歓迎」と表記して白紙提出の心理的ハードルを劇的に低下。定性コメント取得量を増加。";
+                } else {
+                    evidenceText = "選択肢の明確化と認知負荷の削減を行い、心理的ハードルを抑えてスムーズな意思決定を支援。";
+                }
+
+                rHtml += `
+                    <div class="p-3 bg-white rounded-2xl border border-slate-200 shadow-2xs space-y-2">
+                        <div class="flex items-center justify-between text-xs border-b border-slate-100 pb-1.5">
+                            <span class="font-bold text-indigo-700 font-mono bg-indigo-50 px-2 py-0.5 rounded text-[10px]">設問 ${idx + 1} (${q.type === 'scale' ? '5段階評価' : q.type === 'radio' ? '単一選択' : q.type === 'checkbox' ? '複数選択' : '自由記述'})</span>
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                            <div class="p-2.5 rounded-xl bg-rose-50/80 border border-rose-200/80 space-y-1">
+                                <div class="font-bold text-rose-900 text-[10px] flex items-center gap-1">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
+                                    <span>修正前 (原案)</span>
+                                </div>
+                                <div class="text-rose-950 leading-relaxed font-semibold text-[11px]">
+                                    ${escapeHtml(q.title)}
+                                </div>
+                            </div>
+                            <div class="p-2.5 rounded-xl bg-indigo-50/80 border border-indigo-200/80 space-y-1">
+                                <div class="font-bold text-indigo-900 text-[10px] flex items-center gap-1">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-indigo-600"></span>
+                                    <span>修正後 (UX最適化)</span>
+                                </div>
+                                <div class="text-indigo-950 leading-relaxed font-bold text-[11px]">
+                                    Q${idx + 1}. ${escapeHtml(info.cleanTitle)}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="p-2 bg-emerald-50/90 rounded-xl border border-emerald-200 text-[10.5px] text-emerald-950 flex items-start gap-1.5">
+                            <span class="font-bold shrink-0 text-emerald-700 bg-emerald-100/80 px-1.5 py-0.2 rounded text-[9px]">エビデンス</span>
+                            <span class="leading-relaxed font-medium">${evidenceText}</span>
+                        </div>
+                    </div>
+                `;
+            });
+
+            rHtml += `
+                        </div>
+                    </div>
+
+                    <div class="space-y-2.5 pt-1">
+                        <div class="flex items-center justify-between border-b border-slate-200 pb-1.5">
+                            <h3 class="font-extrabold text-slate-900 text-xs flex items-center gap-1.5">
+                                <span class="w-2.5 h-2.5 bg-indigo-600 rounded-full flex items-center justify-center text-[7px] text-white font-bold">2</span>
+                                <span>見込まれる総合効果 (Expected Metrics)</span>
+                            </h3>
+                        </div>
+                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center">
+                            <div class="p-2.5 bg-indigo-50 border border-indigo-200 rounded-xl space-y-0.5">
+                                <div class="text-[9px] sm:text-[10px] font-bold text-indigo-800">予測回答完了率</div>
+                                <div class="text-lg sm:text-xl font-black text-indigo-700 font-mono">${afterScoreNum.toFixed(1)}%</div>
+                                <div class="text-[9px] font-bold bg-white/80 py-0.5 px-1 rounded border ${scoreBadgeClass} inline-block">${scoreDiffText}</div>
+                            </div>
+                            <div class="p-2.5 bg-rose-50 border border-rose-200 rounded-xl space-y-0.5">
+                                <div class="text-[9px] sm:text-[10px] font-bold text-rose-800">想定途中離脱率</div>
+                                <div class="text-lg sm:text-xl font-black text-rose-600 font-mono">${afterDropout}%</div>
+                                <div class="text-[9px] font-bold bg-white/80 py-0.5 px-1 rounded border ${dropoutBadgeClass} inline-block">${dropoutDiffText}</div>
+                            </div>
+                            <div class="p-2.5 bg-amber-50 border border-amber-200 rounded-xl space-y-0.5">
+                                <div class="text-[9px] sm:text-[10px] font-bold text-amber-800">平均回答時間</div>
+                                <div class="text-lg sm:text-xl font-black text-amber-700 font-mono">${avgTimeAfter}</div>
+                                <div class="text-[9px] text-slate-500 font-medium">(原案: ${avgTimeBefore})</div>
+                            </div>
+                            <div class="p-2.5 bg-emerald-50 border border-emerald-200 rounded-xl space-y-0.5">
+                                <div class="text-[9px] sm:text-[10px] font-bold text-emerald-800">定性コメント取得量</div>
+                                <div class="text-lg sm:text-xl font-black text-emerald-700 font-mono">約${commentMultiplier}倍</div>
+                                <div class="text-[9px] font-bold bg-white/80 py-0.5 px-1 rounded border ${commentBadgeClass} inline-block">${commentBadgeText}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('report-text-content').innerHTML = rHtml;
+            document.getElementById('report-modal').classList.remove('hidden');
+        }
+
+        function closeReportModal() {
+            document.getElementById('report-modal').classList.add('hidden');
+        }
+
+        function closeReportModalOnBackdrop(e) {
+            if (e.target.id === 'report-modal') {
+                closeReportModal();
+            }
+        }
+
+        function openReportPrint() {
+            closeSubmitToast();
+            const printableArea = document.getElementById('report-printable-area');
+            if (!printableArea || !printableArea.innerText.trim()) {
+                openReportModal();
+            }
+
+            const inIframe = (window.self !== window.top);
+
+            try {
+                window.focus();
+                window.print();
+            } catch (err) {
+                console.warn("Direct print failed, launching window fallback:", err);
+            }
+
+            if (inIframe) {
+                setTimeout(function() {
+                    downloadPrintableReport();
+                }, 300);
+            }
+        }
+
+        function downloadPrintableReport() {
+            const reportContent = document.getElementById('report-printable-area').innerHTML;
+            const fullHtml = `<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>城ノ内 探究フェス2026 UX診断レポート</title>
+    <script src="https://cdn.tailwindcss.com"><\/script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Noto Sans JP', sans-serif; background: #f8fafc; color: #0f172a; padding: 16px; }
+        @media print {
+            body { background: white; padding: 0; }
+            .no-print { display: none !important; }
+        }
+    </style>
+</head>
+<body class="max-w-4xl mx-auto">
+    <div class="no-print mb-4 p-3 bg-indigo-50 border border-indigo-200 rounded-xl flex items-center justify-between text-xs text-indigo-900 font-bold">
+        <span>📄 印刷・PDF保存用レポート画面です。Ctrl+P (Mac: Cmd+P) で印刷できます。</span>
+        <button onclick="window.print()" class="px-3 py-1 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition cursor-pointer">🖨️ 印刷実行</button>
+    </div>
+    ${reportContent}
+    <script>
+        window.onload = function() {
+            setTimeout(function() {
+                window.focus();
+                window.print();
+            }, 300);
+        };
+    <\/script>
+</body>
+</html>`;
+
+            const blob = new Blob([fullHtml], { type: 'text/html;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `城ノ内探究フェス2026_UX診断レポート.html`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            setTimeout(() => URL.revokeObjectURL(url), 1000);
+
+            showToast(
+                "📄 印刷用レポートの保存完了",
+                "<p>プレビュー画面の制限に対応し、印刷用ファイル(.html)を出力しました。ファイルを開くと印刷が開始されます。</p>"
+            );
+        }
+
+        function copyReportText() {
+            const content = document.getElementById('report-text-content').innerText;
+            const dummy = document.createElement('textarea');
+            dummy.value = content;
+            document.body.appendChild(dummy);
+            dummy.select();
+            document.execCommand('copy');
+            document.body.removeChild(dummy);
+            showToast("📋 レポート全文コピー完了", "<p>診断レポートの内容をクリップボードにコピーしました！</p>");
+        }
+
+        function setPreviewMode(mode) {
+            currentPreviewMode = mode;
+            const btnB = document.getElementById('pv-btn-before');
+            const btnA = document.getElementById('pv-btn-after');
+            if (mode === 'before') {
+                btnB.className = "py-1 px-2 rounded-lg text-xs font-bold transition bg-white text-rose-700 shadow-2xs cursor-pointer";
+                btnA.className = "py-1 px-2 rounded-lg text-xs font-bold transition text-slate-600 hover:text-slate-900 cursor-pointer";
+            } else {
+                btnA.className = "py-1 px-2 rounded-lg text-xs font-bold transition bg-white text-indigo-700 shadow-2xs cursor-pointer";
+                btnB.className = "py-1 px-2 rounded-lg text-xs font-bold transition text-slate-600 hover:text-slate-900 cursor-pointer";
+            }
+            renderPreview();
+        }
+
+        // 全一括リセット処理
+        function resetAll() {
+            customSimOverride = false;
+            const banner = document.getElementById('sim-active-banner');
+            if (banner) banner.classList.add('hidden');
+            
+            resetMathSimDefaults(false);
+            applyPreset(1);
+            currentPresetId = null;
+
+            for (let i = 1; i <= 4; i++) {
+                const btn = document.getElementById(`preset-btn-${i}`);
+                if (btn) {
+                    btn.className = (i === 4)
+                        ? "preset-card text-left p-2.5 sm:p-3 rounded-xl border border-rose-300 bg-rose-50/80 hover:bg-rose-100 transition shadow-2xs group cursor-pointer"
+                        : "preset-card text-left p-2.5 sm:p-3 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 transition shadow-2xs group cursor-pointer";
+                }
+            }
+            showToast("🔄 初期状態にリセット完了", "<p>すべての入力データ・設定・数理パラメータを標準の初期状態に戻しました。</p>");
+        }
+
+        // 数理スライダーのワンクリック初期値復元 (L=35, R=20, V=80, Re=1.4)
+        function resetMathSimDefaults(showNotification = true) {
+            document.getElementById('sim-slider-l').value = 35;
+            document.getElementById('sim-slider-r').value = 20;
+            document.getElementById('sim-slider-v').value = 80;
+            document.getElementById('sim-slider-re').value = 1.4;
+
+            simOverrideParams = { l: 35, r: 20, v: 80, re: 1.4 };
+
+            updateMathSim();
+
+            if (customSimOverride) {
+                runOptimization();
+            }
+
+            if (showNotification) {
+                showToast("↺ パラメータ初期化完了", "<p>数理スライダーの4つの値を標準状態 (L=35pt, R=20pt, V=80pt, Re=1.4倍) にリセットしました。</p>");
+            }
+        }
+
+        // Copy Engine for Google Forms
+        function copyGoogleFormsText() {
+            const theme = document.getElementById('input-theme').value || "アンケート";
+            const target = document.getElementById('input-target').value || "対象者";
+            const purpose = document.getElementById('input-purpose').value || "目的";
+            const time = calculateEstimatedTime().text;
+            const reward = document.getElementById('input-reward').value || "";
+
+            let promptText = `【指示】以下の要件に基づいて、Googleフォーム用アンケートの設問を作成してください。\n`;
+            promptText += `回答者が全体の進捗を把握して途中で離脱しないよう、各設問を複数セクションに区切ってプログレスバー表示に適した構成にしてください。\n\n`;
+            promptText += `■ タイトル: ${theme}\n`;
+            promptText += `■ フォームの説明: ${target}の皆様へ: ${purpose} (所要時間: ${time})\n`;
+            if (reward) promptText += `■ 特典・結果還元: ${reward}\n`;
+            promptText += `\n■ 設問一覧:\n`;
+
+            questionsData.forEach((q, idx) => {
+                const info = stripHeaderPrefix(q.title);
+                promptText += `Q${idx + 1}. ${info.cleanTitle} (${q.type === 'scale' ? '5段階評価' : q.type === 'text' ? '記述式' : '選択式'})\n`;
+            });
+
+            const dummy = document.createElement('textarea');
+            dummy.value = promptText;
+            document.body.appendChild(dummy);
+            dummy.select();
+            document.execCommand('copy');
+            document.body.removeChild(dummy);
+
+            showToast(
+                "📋 Googleフォーム用テキストのコピー完了！",
+                `<p class="font-bold text-slate-800 text-xs">【次の手順】</p>
+                <ol class="list-decimal pl-4 space-y-1 text-slate-600 text-[11px]">
+                    <li><b>手動作成:</b> Googleフォームを開き、コピーされたテキスト（タイトル・設問）を貼り付けます。</li>
+                    <li><b>AI（ChatGPT/Gemini）を使う場合:</b> コピーした文面をAIに貼り付けて指示すると一瞬でスクリプトが生成されます。</li>
+                </ol>`
+            );
+        }
+
+        function showToast(title, msgHtml) {
+            document.getElementById('toast-title').innerText = title;
+            document.getElementById('toast-msg').innerHTML = msgHtml;
+            document.getElementById('toast-modal').classList.remove('hidden');
+        }
+
+        // Chart.js Setup for Math Simulator
+        function initChart() {
+            const ctx = document.getElementById('retentionChart');
+            if (!ctx) return;
+
+            if (retentionChart) {
+                retentionChart.destroy();
+            }
+
+            retentionChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['開始', 'Q1 (低負荷)', 'Q2 (評価)', 'Q3 (記述)', '完了'],
+                    datasets: [{
+                        label: '最適化後 (%)',
+                        data: [100, 96, 92, 89, 88.6],
+                        borderColor: '#4f46e5',
+                        backgroundColor: 'rgba(79, 70, 229, 0.1)',
+                        fill: true,
+                        tension: 0.3,
+                        borderWidth: 2.5,
+                        pointBackgroundColor: '#4f46e5',
+                        pointRadius: 3.5
+                    },
+                    {
+                        label: '原案 (%)',
+                        data: [100, 82, 68, 58, 54.2],
+                        borderColor: '#f43f5e',
+                        borderDash: [4, 4],
+                        fill: false,
+                        tension: 0.3,
+                        borderWidth: 2,
+                        pointBackgroundColor: '#f43f5e',
+                        pointRadius: 2.5
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'top', labels: { font: { size: 9 } } }
+                    },
+                    scales: {
+                        y: { min: 0, max: 100, ticks: { font: { size: 9 }, callback: v => v + '%' } },
+                        x: { ticks: { font: { size: 9 } } }
+                    }
+                }
+            });
+        }
+
+        function updateMathSim() {
+            const l = parseInt(document.getElementById('sim-slider-l').value);
+            const r = parseInt(document.getElementById('sim-slider-r').value);
+            const v = parseInt(document.getElementById('sim-slider-v').value);
+            const re = parseFloat(document.getElementById('sim-slider-re').value);
+
+            document.getElementById('sim-val-l').innerText = l + ' pt';
+            document.getElementById('sim-val-r').innerText = r + ' pt';
+            document.getElementById('sim-val-v').innerText = v + ' pt';
+            document.getElementById('sim-val-re').innerText = re.toFixed(1) + ' 倍';
+
+            let toneDelta = 0;
+            if (currentTone === 'friendly') toneDelta = 0;
+            else if (currentTone === 'standard') toneDelta = -10;
+            else if (currentTone === 'formal') toneDelta = -20;
+
+            const adjustedV = Math.min(100, Math.max(10, v + toneDelta));
+
+            const res = calcScoresFromParams(l, r, adjustedV, re);
+            const score = res.after;
+            const beforeScore = res.before;
+
+            animateValue('sim-result-score', score, 1, "", "%");
+            
+            const subEl = document.getElementById('sim-result-before-sub');
+            if (subEl) {
+                const diffStr = res.uplift >= 0 ? `+${res.uplift.toFixed(1)}%` : `${res.uplift.toFixed(1)}%`;
+                subEl.innerText = `【原案】完了率: ${beforeScore.toFixed(1)}% (改善差分: ${diffStr})`;
+            }
+
+            const zoneEl = document.getElementById('sim-result-zone');
+            const adviceEl = document.getElementById('sim-result-advice');
+
+            if (score >= 80) {
+                zoneEl.className = "px-3 py-1 bg-emerald-100 text-emerald-800 rounded-full font-bold text-xs";
+                zoneEl.innerText = "判定: 極めて高効率 (最適)";
+                adviceEl.innerText = "認知負荷と心理的反発が低く抑えられており、回答者の意欲・返報性も高いため、極めて高い完了率が見込めます！";
+            } else if (score >= 60) {
+                zoneEl.className = "px-3 py-1 bg-indigo-100 text-indigo-800 rounded-full font-bold text-xs";
+                zoneEl.innerText = "判定: 良好 (標準)";
+                adviceEl.innerText = "比較的安定した回答率が期待できます。さらなる改善には所要時間の明記や選択肢の整理が有効です。";
+            } else {
+                zoneEl.className = "px-3 py-1 bg-rose-100 text-rose-800 rounded-full font-bold text-xs";
+                zoneEl.innerText = "判定: 危険 (高離脱率)";
+                adviceEl.innerText = "威圧的な表現（心理的反発）や設問の長さ（認知負荷）が障壁となっています。トーンの軟化と設問数の整理が必要です！";
+            }
+
+            if (retentionChart) {
+                const q1 = Math.min(100, Math.round(100 - r * 0.2));
+                const q2 = Math.min(q1, Math.round(q1 - l * 0.2));
+                const q3 = Math.min(q2, Math.round(q2 - (100 - adjustedV) * 0.1));
+                retentionChart.data.datasets[0].data = [100, Math.max(score, q1), Math.max(score, q2), Math.max(score, q3), score];
+                retentionChart.data.datasets[1].data = [100, Math.max(beforeScore, q1 - 10), Math.max(beforeScore, q2 - 15), Math.max(beforeScore, q3 - 10), beforeScore];
+                retentionChart.update();
+            }
+        }
+
+        function applySimScenario(scen) {
+            if (scen === 'avg') {
+                document.getElementById('sim-slider-l').value = 55;
+                document.getElementById('sim-slider-r').value = 50;
+                document.getElementById('sim-slider-v').value = 35;
+                document.getElementById('sim-slider-re').value = 1.0;
+            } else if (scen === 'ng') {
+                document.getElementById('sim-slider-l').value = 85;
+                document.getElementById('sim-slider-r').value = 75;
+                document.getElementById('sim-slider-v').value = 40;
+                document.getElementById('sim-slider-re').value = 1.0;
+            } else if (scen === 'ideal') {
+                document.getElementById('sim-slider-l').value = 25;
+                document.getElementById('sim-slider-r').value = 10;
+                document.getElementById('sim-slider-v').value = 85;
+                document.getElementById('sim-slider-re').value = 1.8;
+            } else if (scen === 'heavy') {
+                document.getElementById('sim-slider-l').value = 90;
+                document.getElementById('sim-slider-r').value = 30;
+                document.getElementById('sim-slider-v').value = 60;
+                document.getElementById('sim-slider-re').value = 1.2;
+            }
+            updateMathSim();
+        }
+
+        function applySimToGen(label) {
+            customSimOverride = true;
+            simOverrideParams = {
+                l: parseInt(document.getElementById('sim-slider-l').value),
+                r: parseInt(document.getElementById('sim-slider-r').value),
+                v: parseInt(document.getElementById('sim-slider-v').value),
+                re: parseFloat(document.getElementById('sim-slider-re').value)
+            };
+
+            const banner = document.getElementById('sim-active-banner');
+            const textEl = document.getElementById('sim-active-text');
+            if (banner && textEl) {
+                textEl.innerText = `🧮 回答者の環境ストレスを適用中 ${label ? `(${label})` : ''}`;
+                banner.classList.remove('hidden');
+            }
+
+            switchMainTab('gen');
+            runOptimization();
+        }
+
+        function clearSimOverride() {
+            customSimOverride = false;
+            const banner = document.getElementById('sim-active-banner');
+            if (banner) banner.classList.add('hidden');
+            runOptimization();
+        }
+
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeFullScreenCompare();
+                closeReportModal();
+                closeSubmitToast();
+            }
+        });
+
+        window.onload = function() {
+            applyPreset(1);
+            currentPresetId = null;
+            for (let i = 1; i <= 4; i++) {
+                const btn = document.getElementById(`preset-btn-${i}`);
+                if (btn) {
+                    btn.className = (i === 4)
+                        ? "preset-card text-left p-2.5 sm:p-3 rounded-xl border border-rose-300 bg-rose-50/80 hover:bg-rose-100 transition shadow-2xs group cursor-pointer"
+                        : "preset-card text-left p-2.5 sm:p-3 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 transition shadow-2xs group cursor-pointer";
+                }
+            }
+        };
+    </script>
+</body>
+</html>
