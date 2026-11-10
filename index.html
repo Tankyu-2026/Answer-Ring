@@ -366,23 +366,28 @@
 
                     <!-- Question List Builder & Choice Option Editor -->
                     <div class="flex-1 flex flex-col pt-2 border-t border-slate-100 space-y-2">
-                        <div class="flex items-center justify-between shrink-0">
+                        <div class="flex items-center justify-between shrink-0 flex-wrap gap-1">
                             <label class="text-xs font-bold text-slate-900 flex items-center gap-1.5">
                                 <i class="fa-solid fa-list-check text-indigo-600"></i>
                                 <span>原案の設問リスト編集</span>
                             </label>
-                            <button type="button" onclick="addQuestion()" class="text-[11px] bg-indigo-50 text-indigo-700 hover:bg-indigo-100 px-2 py-1 rounded-lg font-bold transition flex items-center gap-1 cursor-pointer">
-                                <i class="fa-solid fa-plus text-[10px]"></i> 設問追加
-                            </button>
+                            <div class="flex items-center gap-1">
+                                <button type="button" onclick="purgeCoerciveWords()" class="text-[10px] bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200 px-2 py-1 rounded-lg font-bold transition flex items-center gap-1 cursor-pointer" title="「絶対」「必ず」等の強要表現をワンタップで自動除去">
+                                    <i class="fa-solid fa-wand-magic-sparkles text-rose-500"></i> 強要文字自動消去
+                                </button>
+                                <button type="button" onclick="addQuestion()" class="text-[11px] bg-indigo-50 text-indigo-700 hover:bg-indigo-100 px-2 py-1 rounded-lg font-bold transition flex items-center gap-1 cursor-pointer">
+                                    <i class="fa-solid fa-plus text-[10px]"></i> 設問追加
+                                </button>
+                            </div>
                         </div>
                         <div id="questions-builder" class="space-y-2 max-h-[380px] lg:max-h-none overflow-y-auto pr-1 border border-slate-100 rounded-xl p-2 bg-slate-50/50"></div>
                     </div>
 
                     <div id="toxic-alert" class="hidden shrink-0 p-2.5 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-800 space-y-1">
                         <div class="font-bold flex items-center gap-1.5 text-rose-700">
-                            <i class="fa-solid fa-triangle-exclamation"></i> 強要的文言（心理的ブレーキ要因）を検知
+                            <i class="fa-solid fa-triangle-exclamation"></i> 強要的文言（「絶対」「必ず」「必須」）を検知
                         </div>
-                        <p class="text-[10.5px] text-rose-600 leading-tight">「必須」「義務」等の命令的表現が含まれており、回答者の心理的反発を招いて離脱率を上昇させます。最適化により自動解除されます。</p>
+                        <p class="text-[10.5px] text-rose-600 leading-tight">「絶対」「必ず」「必須」等の心理的ブレ―キ文字が含まれており、回答者の抵抗感を高めて離脱率を上昇させています。最適化により全自動除去されます。</p>
                     </div>
                 </div>
 
@@ -1065,8 +1070,8 @@
         </div>
     </footer>
 
-    <!-- Toast Modal (周囲の暗い背景タップで閉じられる仕様) -->
-    <div id="toast-modal" onclick="closeSubmitToastOnBackdrop(event)" class="hidden fixed inset-0 z-[99999] bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 cursor-pointer">
+    <!-- Toast Modal (FSCモーダルの上 z-[100000] に配置・周囲暗枠タップで閉じる) -->
+    <div id="toast-modal" onclick="closeSubmitToastOnBackdrop(event)" class="hidden fixed inset-0 z-[100000] bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 cursor-pointer">
         <div onclick="event.stopPropagation()" class="bg-white rounded-2xl p-4 sm:p-6 max-w-sm w-full shadow-2xl text-center space-y-3 transform transition-all border border-slate-100 max-h-[90vh] overflow-y-auto cursor-default">
             <div id="toast-icon-box" class="w-10 h-10 sm:w-12 sm:h-12 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto text-lg sm:text-xl shrink-0">
                 <i class="fa-solid fa-circle-check"></i>
@@ -1238,6 +1243,128 @@
             animationRegistry[elementId] = requestAnimationFrame(updateStep);
         }
 
+        // 強要表現（「絶対」「必須」「必ず」等）の文頭・文頭括弧・文中の完全消去エンジン
+        function stripHeaderPrefix(title) {
+            if (!title || typeof title !== 'string') return { isRequired: false, cleanTitle: 'ご回答項目' };
+
+            const requiredKeywords = [
+                "絶対必須回答・未回答不可", "必須回答", "回答必須", "必須・詳細記入", 
+                "絶対必須", "絶対回答", "必須項目", "入力必須", "回答義務", "完全必須", 
+                "義務化", "絶対条件", "全問回答", "必須", "義務", "厳守", "絶対", "強制", 
+                "必修", "制限", "禁止", "厳禁", "必ず", "ペナルティ", "ブラックリスト", 
+                "must", "MUST", "Required", "REQUIRED"
+            ];
+            
+            const requiredKeywordsRegex = new RegExp(`(【?[^\\s【\\]［\\(（]*?(${requiredKeywords.join('|')})[^\\s】\\]］\\)）]*?】?|しなさい|こと$)`, 'i');
+            const isRequired = requiredKeywordsRegex.test(title);
+
+            let clean = title;
+
+            // 【絶対】【必須】【必ず回答】などのブラケット表記を一括削除
+            clean = clean.replace(/【\s*[^】]*?(絶対|必須|必ず|義務|強制|厳守|しなさい|こと)[^】]*?】/gi, '');
+            clean = clean.replace(/\[\s*[^\]]*?(絶対|必須|必ず|義務|強制|厳守|しなさい|こと)[^\]]*?\]/gi, '');
+            clean = clean.replace(/\(\s*[^)]*?(絶対|必須|必ず|義務|強制|厳守|しなさい|こと)[^)]*?\)/gi, '');
+            clean = clean.replace(/（\s*[^）]*?(絶対|必須|必ず|義務|強制|厳守|しなさい|こと)[^）]*?）/gi, '');
+
+            // 先頭の強要接頭辞を削除
+            clean = clean.replace(/^\s*(絶対必須回答・未回答不可|必須回答|回答必須|必須・詳細記入|絶対必須|絶対回答|必須項目|入力必須|回答義務|完全必須|義務化|絶対条件|全問回答|必須|義務|厳守|絶対|強制|必修|制限|禁止|厳禁|必ず)[:：\s-]*/gi, '');
+
+            // 文末の命令文（しなさい/すること）を削除
+            clean = clean.replace(/しなさい$/g, '');
+            clean = clean.replace(/すること$/g, '');
+
+            // 文中に残留した「絶対に」「絶対」「必ず」「必須」の文字を完全消去
+            clean = clean.replace(/(絶対に|絶対|必ず|必須|義務)/g, '');
+
+            clean = clean.replace(/\s+/g, ' ').trim();
+            if (!clean) {
+                clean = "ご回答項目";
+            }
+
+            return { isRequired: isRequired, cleanTitle: clean };
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        // ワンタップで全設問から「絶対」「必須」等の強要表現を直接消去する機能
+        function purgeCoerciveWords() {
+            let purgedCount = 0;
+            questionsData.forEach(q => {
+                const info = stripHeaderPrefix(q.title);
+                if (info.isRequired) purgedCount++;
+                q.title = info.cleanTitle;
+            });
+            renderQuestionsBuilder();
+            runOptimization();
+            showToast("✨ 強要文字の全消去完了", `<p>${purgedCount}件の設問から「絶対」「必須」「必ず」等の強要表現を綺麗に削除しました！</p>`);
+        }
+
+        // Global Navigation Controls
+        function goHomeKeepState() {
+            switchMainTab('gen');
+        }
+
+        function switchMainTab(tab) {
+            currentMainTab = tab;
+            const views = { gen: 'view-gen', macro: 'view-macro', sim: 'view-sim' };
+            const btns = { gen: 'tab-btn-gen', macro: 'tab-btn-macro', sim: 'tab-btn-sim' };
+
+            Object.keys(views).forEach(key => {
+                const el = document.getElementById(views[key]);
+                const btn = document.getElementById(btns[key]);
+                if (key === tab) {
+                    el.classList.remove('hidden');
+                    el.classList.remove('tab-view-animate');
+                    void el.offsetWidth;
+                    el.classList.add('tab-view-animate');
+                    btn.className = "flex-1 md:flex-initial px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg text-[11px] sm:text-xs font-bold transition-all duration-300 flex items-center justify-center gap-1 bg-white text-indigo-700 shadow-2xs whitespace-nowrap cursor-pointer";
+                } else {
+                    el.classList.add('hidden');
+                    el.classList.remove('tab-view-animate');
+                    btn.className = "flex-1 md:flex-initial px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg text-[11px] sm:text-xs font-bold transition-all duration-300 flex items-center justify-center gap-1 text-slate-600 hover:text-slate-900 whitespace-nowrap cursor-pointer";
+                }
+            });
+
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+
+            if (tab === 'sim') {
+                if (!retentionChart) initChart();
+                updateMathSim();
+            }
+        }
+
+        // Standardized Math Engine with Safety Boundary Guards (0.1% ~ 99.9%)
+        function calcScoresFromParams(lInput, rInput, vInput, reInput) {
+            const l = Math.max(5, Math.min(100, Number(lInput) || 5));
+            const r = Math.max(0, Math.min(100, Number(rInput) || 0));
+            const v = Math.max(10, Math.min(100, Number(vInput) || 10));
+            const re = Math.max(1.0, Math.min(3.0, Number(reInput) || 1.0));
+
+            const denBefore = 10 + l * 0.6 + r * 0.8;
+            const scoreBeforeRaw = ((v * 1.0) / (denBefore > 0 ? denBefore : 1)) * 40;
+            const scoreBefore = Math.min(99.9, Math.max(0.1, Math.round(scoreBeforeRaw * 10) / 10));
+
+            const lAfter = Math.max(5, Math.round(l * 0.65));
+            const rAfter = Math.max(0, Math.round(r * 0.20));
+            const denAfter = 10 + lAfter * 0.6 + rAfter * 0.8;
+            const scoreAfterRaw = ((v * re) / (denAfter > 0 ? denAfter : 1)) * 40;
+            const scoreAfter = Math.min(99.9, Math.max(0.1, Math.round(scoreAfterRaw * 10) / 10));
+
+            return {
+                before: scoreBefore,
+                after: scoreAfter,
+                uplift: Math.round((scoreAfter - scoreBefore) * 10) / 10
+            };
+        }
+
         // Presets Definition
         const presets = {
             1: {
@@ -1336,95 +1463,6 @@
                 formatted = `約${mins}分`;
             }
             return { totalSec, text: formatted };
-        }
-
-        // 強要表現除去・判定関数
-        function stripHeaderPrefix(title) {
-            if (!title || typeof title !== 'string') return { isRequired: false, cleanTitle: 'ご回答項目' };
-
-            const requiredKeywordsRegex = /(【?[^\s【\]［\(（]*?(絶対必須回答・未回答不可|必須回答|回答必須|必須・詳細記入|絶対必須|絶対回答|必須項目|入力必須|回答義務|完全必須|義務化|絶対条件|全問回答|必須|義務|厳守|絶対|強制|必修|制限|禁止|厳禁|ペナルティ|ブラックリスト|must|MUST|Required|REQUIRED)[^\s】\]］\)）]*?】?|しなさい|こと$)/i;
-            const isRequired = requiredKeywordsRegex.test(title);
-
-            let clean = title;
-            const bracketRegex = /[【\[［\(（<＜]\s*[^】\]］\)）>＞]*?(絶対必須回答・未回答不可|必須回答|回答必須|必須・詳細記入|絶対必須|絶対回答|必須項目|入力必須|回答義務|完全必須|義務化|絶対条件|全問回答|必須|義務|厳守|絶対|強制|必修|制限|禁止|厳禁|ペナルティ|ブラックリスト|must|MUST|Required|REQUIRED)[^】\]］\)）>＞]*?\s*[】\]］\)）>＞][:：\s-]*/gi;
-            const startPrefixRegex = /^\s*(絶対必須回答・未回答不可|必須回答|回答必須|必須・詳細記入|絶対必須|絶対回答|必須項目|入力必須|回答義務|完全必須|義務化|絶対条件|全問回答|必須|義務|厳守|絶対|強制|必修|制限|禁止|厳禁|ペナルティ|ブラックリスト|must|MUST|Required|REQUIRED)[:：\s-]+\s*/gi;
-            const wordOnlyRegex = /^\s*(絶対必須回答・未回答不可|必須回答|回答必須|必須・詳細記入|絶対必須|絶対回答|必須項目|入力必須|回答義務|完全必須|義務化|絶対条件|全問回答|必須|義務|厳守|絶対|強制|必修|制限|禁止|厳禁|ペナルティ|ブラックリスト)\s*/gi;
-
-            clean = clean.replace(bracketRegex, '').replace(startPrefixRegex, '').replace(wordOnlyRegex, '').trim();
-
-            if (!clean) {
-                clean = "ご回答項目";
-            }
-
-            return { isRequired: isRequired, cleanTitle: clean };
-        }
-
-        function escapeHtml(str) {
-            if (!str) return '';
-            return String(str)
-                .replace(/&/g, '&amp;')
-                .replace(/</g, '&lt;')
-                .replace(/>/g, '&gt;')
-                .replace(/"/g, '&quot;')
-                .replace(/'/g, '&#039;');
-        }
-
-        // Global Navigation Controls
-        function goHomeKeepState() {
-            switchMainTab('gen');
-        }
-
-        function switchMainTab(tab) {
-            currentMainTab = tab;
-            const views = { gen: 'view-gen', macro: 'view-macro', sim: 'view-sim' };
-            const btns = { gen: 'tab-btn-gen', macro: 'tab-btn-macro', sim: 'tab-btn-sim' };
-
-            Object.keys(views).forEach(key => {
-                const el = document.getElementById(views[key]);
-                const btn = document.getElementById(btns[key]);
-                if (key === tab) {
-                    el.classList.remove('hidden');
-                    el.classList.remove('tab-view-animate');
-                    void el.offsetWidth;
-                    el.classList.add('tab-view-animate');
-                    btn.className = "flex-1 md:flex-initial px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg text-[11px] sm:text-xs font-bold transition-all duration-300 flex items-center justify-center gap-1 bg-white text-indigo-700 shadow-2xs whitespace-nowrap cursor-pointer";
-                } else {
-                    el.classList.add('hidden');
-                    el.classList.remove('tab-view-animate');
-                    btn.className = "flex-1 md:flex-initial px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg text-[11px] sm:text-xs font-bold transition-all duration-300 flex items-center justify-center gap-1 text-slate-600 hover:text-slate-900 whitespace-nowrap cursor-pointer";
-                }
-            });
-
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-
-            if (tab === 'sim') {
-                if (!retentionChart) initChart();
-                updateMathSim();
-            }
-        }
-
-        // Standardized Math Engine with Safety Boundary Guards
-        function calcScoresFromParams(lInput, rInput, vInput, reInput) {
-            const l = Math.max(5, Math.min(100, Number(lInput) || 5));
-            const r = Math.max(0, Math.min(100, Number(rInput) || 0));
-            const v = Math.max(10, Math.min(100, Number(vInput) || 10));
-            const re = Math.max(1.0, Math.min(3.0, Number(reInput) || 1.0));
-
-            const denBefore = 10 + l * 0.6 + r * 0.8;
-            const scoreBeforeRaw = ((v * 1.0) / (denBefore > 0 ? denBefore : 1)) * 40;
-            const scoreBefore = Math.min(99.9, Math.max(0.1, Math.round(scoreBeforeRaw * 10) / 10));
-
-            const lAfter = Math.max(5, Math.round(l * 0.65));
-            const rAfter = Math.max(0, Math.round(r * 0.20));
-            const denAfter = 10 + lAfter * 0.6 + rAfter * 0.8;
-            const scoreAfterRaw = ((v * re) / (denAfter > 0 ? denAfter : 1)) * 40;
-            const scoreAfter = Math.min(99.9, Math.max(0.1, Math.round(scoreAfterRaw * 10) / 10));
-
-            return {
-                before: scoreBefore,
-                after: scoreAfter,
-                uplift: Math.round((scoreAfter - scoreBefore) * 10) / 10
-            };
         }
 
         // Preset Application
@@ -1632,8 +1670,10 @@
 
         function selectScale(element, val) {
             const parent = element.parentElement;
-            parent.querySelectorAll('.scale-btn').forEach(btn => btn.classList.remove('active', 'bg-indigo-600', 'text-white'));
-            element.classList.add('active', 'bg-indigo-600', 'text-white');
+            if (parent) {
+                parent.querySelectorAll('.scale-btn').forEach(btn => btn.classList.remove('active', 'bg-indigo-600', 'text-white'));
+                element.classList.add('active', 'bg-indigo-600', 'text-white');
+            }
             
             const cardEl = element.closest('[id^="pv-q-card-"]');
             if (cardEl) {
@@ -1654,7 +1694,69 @@
             updateProgressBar();
         }
 
-        // 動的プログレスバー進捗更新
+        // 全画面比較（FSC）モード用の選択・入力ハンドラー
+        function selectFscScale(element, val, side) {
+            const parent = element.parentElement;
+            if (parent) {
+                parent.querySelectorAll('.scale-btn').forEach(btn => btn.classList.remove('active', 'bg-indigo-600', 'text-white'));
+                element.classList.add('active', 'bg-indigo-600', 'text-white');
+            }
+            const prefix = side === 'b' ? 'fsc-b-q-card-' : 'fsc-a-q-card-';
+            const cardEl = element.closest(`[id^="${prefix}"]`);
+            if (cardEl) {
+                cardEl.classList.remove('border-rose-500', 'bg-rose-50/30');
+                const errEl = cardEl.querySelector('[id*="-q-err-"]');
+                if (errEl) errEl.classList.add('hidden');
+            }
+            if (side === 'a') updateFscProgressBar();
+        }
+
+        function handleFscInputChange(el, side) {
+            const prefix = side === 'b' ? 'fsc-b-q-card-' : 'fsc-a-q-card-';
+            const cardEl = el.closest(`[id^="${prefix}"]`);
+            if (cardEl) {
+                cardEl.classList.remove('border-rose-500', 'bg-rose-50/30');
+                const errEl = cardEl.querySelector('[id*="-q-err-"]');
+                if (errEl) errEl.classList.add('hidden');
+            }
+            if (side === 'a') updateFscProgressBar();
+        }
+
+        // 全画面比較（FSC）用リアルタイムプログレスバー更新
+        function updateFscProgressBar() {
+            const totalQ = questionsData.length;
+            if (totalQ === 0) return;
+            let answeredQ = 0;
+
+            questionsData.forEach((q, idx) => {
+                const cardEl = document.getElementById(`fsc-a-q-card-${idx}`);
+                if (!cardEl) return;
+                let isAnswered = false;
+                if (q.type === 'scale') {
+                    isAnswered = !!cardEl.querySelector('.scale-btn.active');
+                } else if (q.type === 'radio') {
+                    isAnswered = !!cardEl.querySelector('input[type="radio"]:checked');
+                } else if (q.type === 'checkbox') {
+                    isAnswered = !!cardEl.querySelector('input[type="checkbox"]:checked');
+                } else if (q.type === 'text') {
+                    const val = cardEl.querySelector('textarea')?.value.trim();
+                    isAnswered = (val !== undefined && val !== '');
+                }
+                if (isAnswered) answeredQ++;
+            });
+
+            const pct = Math.min(100, Math.round((answeredQ / totalQ) * 100));
+
+            const fillEl = document.getElementById('fsc-progress-fill');
+            const pctEl = document.getElementById('fsc-progress-pct');
+            const countEl = document.getElementById('fsc-progress-count');
+
+            if (fillEl) fillEl.style.width = pct + '%';
+            if (pctEl) pctEl.innerText = pct + '%';
+            if (countEl) countEl.innerText = `${answeredQ}/${totalQ}問 回答完了`;
+        }
+
+        // 動的プログレスバー進捗更新 (通常プレビュー用)
         function updateProgressBar() {
             const totalQ = questionsData.length;
             if (totalQ === 0) return;
@@ -1688,20 +1790,26 @@
             if (countEl) countEl.innerText = `${answeredQ}/${totalQ}問 回答完了`;
         }
 
-        // Dynamically synchronized form submission handlers
+        // 送信ボタンクリック時の安全なバリデーション & モーダル連動処理（通常画面 / 全画面比較の両対応）
         function handleFormSubmit(mode) {
             let hasError = false;
             let firstErrorEl = null;
 
+            const isFsc = typeof mode === 'string' && mode.startsWith('fsc-');
+            const targetSide = (typeof mode === 'string' && mode.endsWith('before')) ? 'before' : (mode === 'before' ? 'before' : 'after');
+            
+            const prefix = isFsc ? (targetSide === 'before' ? 'fsc-b-q-card-' : 'fsc-a-q-card-') : 'pv-q-card-';
+            const errPrefix = isFsc ? (targetSide === 'before' ? 'fsc-b-q-err-' : 'fsc-a-q-err-') : 'pv-q-err-';
+
             questionsData.forEach((q, idx) => {
                 const info = stripHeaderPrefix(q.title);
-                const cardEl = document.getElementById(`pv-q-card-${idx}`);
-                const errEl = document.getElementById(`pv-q-err-${idx}`);
+                const cardEl = document.getElementById(`${prefix}${idx}`);
+                const errEl = document.getElementById(`${errPrefix}${idx}`);
                 
                 if (!cardEl) return;
 
                 let isFilled = false;
-                if (!info.isRequired) {
+                if (targetSide === 'after' && !info.isRequired) {
                     isFilled = true;
                 } else {
                     if (q.type === 'scale') {
@@ -1731,18 +1839,17 @@
                 if (firstErrorEl) {
                     firstErrorEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
                 }
-                showToast("⚠️ 離脱が発生しました（未入力エラー）", "<p class='text-rose-700 font-bold'>【必須】の強要によるプレッシャーと未入力エラーにより、実際の回答者の約45%がこの時点でストレスを感じて画面を閉じてしまいます。</p><p class='mt-1 text-slate-500 text-[11px]'>※「*」がついた必須項目に入力してから再度送信してください。</p>");
+                showToast("⚠️ 離脱が発生しました（未入力エラー）", "<p class='text-rose-700 font-bold'>【必須】の強要によるプレッシャーと未入力エラーにより、実際の回答者の約45%がこの時点でストレスを感じて画面を閉じてしまいます。</p><p class='mt-1 text-slate-500 text-[11px] font-bold'>※「*」がついた必須項目に入力してから再度送信してください。</p>");
                 return;
             }
 
             const estTime = calculateEstimatedTime();
-
             const beforeScoreStr = document.getElementById('score-before')?.innerText || "54.2%";
             const afterScoreStr = document.getElementById('score-after')?.innerText || "88.6%";
             const beforeScoreNum = parseFloat(beforeScoreStr) || 54.2;
             const beforeDropoutStr = (100 - beforeScoreNum).toFixed(1) + "%";
 
-            if (mode === 'before') {
+            if (targetSide === 'before') {
                 showToast(
                     "🔴 【原案フォーム】離脱リスク体験テスト", 
                     `<div class="space-y-1.5 text-left">
@@ -2090,6 +2197,7 @@
             }
         }
 
+        // 全画面比較（FSC）カード生成エンジン
         function renderFullScreenCards() {
             const theme = document.getElementById('input-theme').value || "アンケート";
             const target = document.getElementById('input-target').value || "対象者";
@@ -2118,7 +2226,7 @@
             questionsData.forEach((q, idx) => {
                 const info = stripHeaderPrefix(q.title);
                 bHtml += `
-                    <div class="p-2 sm:p-2.5 rounded-lg border border-rose-100 bg-white shadow-2xs space-y-1.5">
+                    <div id="fsc-b-q-card-${idx}" class="p-2 sm:p-2.5 rounded-lg border border-rose-100 bg-white shadow-2xs space-y-1.5">
                         <div class="flex items-start justify-between gap-1">
                             <span class="font-bold text-[11px] text-rose-950 leading-snug">Q${idx + 1}. ${escapeHtml(q.title)} ${info.isRequired ? '<span class="text-rose-600 font-bold ml-0.5" title="必須">*</span>' : ''}</span>
                             <span class="text-[9px] bg-rose-100 text-rose-700 px-1.5 py-0.2 rounded font-bold shrink-0">命令表現</span>
@@ -2129,7 +2237,7 @@
                         <div class="space-y-0.5 pt-0.5">
                             <div class="flex items-center justify-between text-[9px] text-slate-500 font-bold px-0.5"><span>そう思わない</span><span>強くそう思う</span></div>
                             <div class="grid grid-cols-5 gap-1">
-                                ${[1, 2, 3, 4, 5].map(n => `<button type="button" onclick="selectScale(this, ${n})" class="scale-btn py-1 border border-slate-200 rounded-lg font-bold text-[11px] text-slate-700 bg-slate-50">${n}</button>`).join('')}
+                                ${[1, 2, 3, 4, 5].map(n => `<button type="button" onclick="selectFscScale(this, ${n}, 'b')" class="scale-btn py-1 border border-slate-200 rounded-lg font-bold text-[11px] text-slate-700 bg-slate-50">${n}</button>`).join('')}
                             </div>
                         </div>
                     `;
@@ -2137,18 +2245,24 @@
                     const opts = (q.options && q.options.length > 0) ? q.options : ["選択肢 1", "選択肢 2", "選択肢 3"];
                     bHtml += `
                         <div class="grid grid-cols-1 gap-1 pt-0.5">
-                            ${opts.map((opt, oIdx) => `<label class="flex items-center gap-1.5 text-[11px] text-slate-700 p-0.5"><input type="${q.type}" name="fsc_b_${idx}" class="accent-rose-600 shrink-0"><span class="truncate">${escapeHtml(opt)}</span></label>`).join('')}
+                            ${opts.map((opt, oIdx) => `<label class="flex items-center gap-1.5 text-[11px] text-slate-700 p-0.5"><input type="${q.type}" name="fsc_b_${idx}" onchange="handleFscInputChange(this, 'b')" class="accent-rose-600 shrink-0"><span class="truncate">${escapeHtml(opt)}</span></label>`).join('')}
                         </div>
                     `;
                 } else {
-                    bHtml += `<div class="pt-0.5"><textarea rows="1.5" class="w-full text-[11px] p-2 rounded-lg border border-slate-200 bg-slate-50 leading-tight" placeholder="詳細に記入しなさい..."></textarea></div>`;
+                    bHtml += `<div class="pt-0.5"><textarea rows="1.5" oninput="handleFscInputChange(this, 'b')" class="w-full text-[11px] p-2 rounded-lg border border-slate-200 bg-slate-50 leading-tight" placeholder="詳細に記入しなさい..."></textarea></div>`;
                 }
+                bHtml += `
+                    <div id="fsc-b-q-err-${idx}" class="hidden pt-1 flex items-center gap-1.5 text-rose-600 font-bold text-[11px]">
+                        <i class="fa-solid fa-circle-exclamation text-rose-500"></i>
+                        <span>必須の質問です</span>
+                    </div>
+                `;
                 bHtml += `</div>`;
             });
 
             bHtml += `
                     </div>
-                    <button type="button" onclick="handleFormSubmit('before')" class="w-full py-2 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs shadow-2xs transition cursor-pointer">回答を送信する</button>
+                    <button type="button" onclick="handleFormSubmit('fsc-before')" class="w-full py-2 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs shadow-2xs transition cursor-pointer">回答を送信する</button>
                 </div>
             `;
 
@@ -2167,13 +2281,18 @@
                         <div class="pt-2 pb-1 space-y-1.5">
                             <div class="flex items-center justify-between text-xs font-bold">
                                 <span class="text-indigo-900 flex items-center gap-1.5">
-                                    <i class="fa-solid fa-bars-progress text-indigo-600"></i>
+                                    <i class="fa-solid fa-bars-progress text-indigo-600 animate-pulse"></i>
                                     <span>プログレスバー</span>
                                 </span>
-                                <span class="bg-amber-400 text-slate-900 font-mono font-black text-xs px-2 py-0.5 rounded-full">リアルタイム連動中</span>
+                                <div class="flex items-center gap-1.5">
+                                    <span id="fsc-progress-count" class="text-slate-600 font-mono text-[11px] font-bold">0/${questionsData.length}問 回答完了</span>
+                                    <span id="fsc-progress-pct" class="bg-amber-400 text-slate-900 font-mono font-black text-xs px-2 py-0.5 rounded-full shadow-2xs">0%</span>
+                                </div>
                             </div>
                             <div class="w-full bg-slate-200/90 h-5 rounded-full overflow-hidden p-1 border border-slate-300 shadow-inner relative">
-                                <div class="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 h-full rounded-full" style="width: 50%"></div>
+                                <div id="fsc-progress-fill" class="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 h-full rounded-full transition-all duration-300 shadow-sm relative overflow-hidden" style="width: 0%">
+                                    <div class="absolute inset-0 bg-white/20 opacity-50 animate-pulse"></div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -2191,7 +2310,7 @@
                 }
 
                 aHtml += `
-                    <div class="p-2 sm:p-2.5 rounded-lg border border-slate-200 bg-white shadow-2xs space-y-1.5">
+                    <div id="fsc-a-q-card-${idx}" class="p-2 sm:p-2.5 rounded-lg border border-slate-200 bg-white shadow-2xs space-y-1.5">
                         <div class="flex items-start justify-between gap-1">
                             ${titleHtml}
                             <span class="text-[9px] bg-emerald-100 text-emerald-800 px-1.5 py-0.2 rounded font-bold shrink-0">✨ ブレーキ解除</span>
@@ -2202,7 +2321,7 @@
                         <div class="space-y-0.5 pt-0.5">
                             <div class="flex items-center justify-between text-[9px] text-slate-500 font-bold px-0.5"><span>そう思わない</span><span>強くそう思う</span></div>
                             <div class="grid grid-cols-5 gap-1">
-                                ${[1, 2, 3, 4, 5].map(n => `<button type="button" onclick="selectScale(this, ${n})" class="scale-btn py-1 border border-slate-200 hover:border-indigo-400 rounded-lg font-bold text-[11px] text-slate-700 bg-slate-50 hover:bg-indigo-50">${n}</button>`).join('')}
+                                ${[1, 2, 3, 4, 5].map(n => `<button type="button" onclick="selectFscScale(this, ${n}, 'a')" class="scale-btn py-1 border border-slate-200 hover:border-indigo-400 rounded-lg font-bold text-[11px] text-slate-700 bg-slate-50 hover:bg-indigo-50">${n}</button>`).join('')}
                             </div>
                         </div>
                     `;
@@ -2210,23 +2329,31 @@
                     const opts = (q.options && q.options.length > 0) ? q.options : ["選択肢 1", "選択肢 2", "選択肢 3"];
                     aHtml += `
                         <div class="grid grid-cols-1 gap-1 pt-0.5">
-                            ${opts.map((opt, oIdx) => `<label class="flex items-center gap-1.5 text-[11px] text-slate-700 p-0.5"><input type="${q.type}" name="fsc_a_${idx}" class="accent-indigo-600 shrink-0"><span class="truncate">${escapeHtml(opt)}</span></label>`).join('')}
+                            ${opts.map((opt, oIdx) => `<label class="flex items-center gap-1.5 text-[11px] text-slate-700 p-0.5"><input type="${q.type}" name="fsc_a_${idx}" onchange="handleFscInputChange(this, 'a')" class="accent-indigo-600 shrink-0"><span class="truncate">${escapeHtml(opt)}</span></label>`).join('')}
                         </div>
                     `;
                 } else {
-                    aHtml += `<div class="pt-0.5"><textarea rows="1.5" class="w-full text-[11px] p-2 rounded-lg border border-slate-200 bg-slate-50 leading-tight" placeholder="率直なご意見を一言だけでも歓迎です..."></textarea></div>`;
+                    aHtml += `<div class="pt-0.5"><textarea rows="1.5" oninput="handleFscInputChange(this, 'a')" class="w-full text-[11px] p-2 rounded-lg border border-slate-200 bg-slate-50 leading-tight" placeholder="率直なご意見を一言だけでも歓迎です..."></textarea></div>`;
                 }
+                aHtml += `
+                    <div id="fsc-a-q-err-${idx}" class="hidden pt-1 flex items-center gap-1.5 text-rose-600 font-bold text-[11px]">
+                        <i class="fa-solid fa-circle-exclamation text-rose-500"></i>
+                        <span>必須の質問です</span>
+                    </div>
+                `;
                 aHtml += `</div>`;
             });
 
             aHtml += `
                     </div>
-                    <button type="button" onclick="handleFormSubmit('after')" class="w-full py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-2xs transition cursor-pointer">回答を送信する</button>
+                    <button type="button" onclick="handleFormSubmit('fsc-after')" class="w-full py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs shadow-2xs transition cursor-pointer">回答を送信する</button>
                 </div>
             `;
 
             elBefore.innerHTML = bHtml;
             elAfter.innerHTML = aHtml;
+
+            updateFscProgressBar();
         }
 
         // Report Modal Engine - Dynamically synchronized with live UI values
